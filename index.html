@@ -200,7 +200,8 @@ async function send(body, opts = {}) {
   if (!f) { toast("先に友達を追加してね", false); return false; }
   const me = store.get("myName", "") || "だれか";
   const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
-  const params = new URLSearchParams({ group: "友達通知" });
+  // group を付けると iPhone 側で1つの束にまとめられるので、連打時は付けない
+  const params = new URLSearchParams();
   if (opts.sound) params.set("sound", opts.sound);
   if (opts.level) params.set("level", opts.level);
   const url = `${server}/${encodeURIComponent(f.key)}/${encodeURIComponent(me + " から")}/${encodeURIComponent(body)}?${params}`;
@@ -264,7 +265,13 @@ QUICK.forEach(q => {
   const badge = document.createElement("span");
   badge.className = "count";
   b.appendChild(badge);
-  let combo = 0, comboTimer;
+  // 連打が止まって全部の送信結果が返ったら、何回届いたかを表示
+  let combo = 0, comboTimer, taps = 0, sent = 0, done = 0;
+  const report = () => {
+    if (combo > 0 || done === 0 || done < taps) return;
+    toast(`${done}回中 ${sent}回 送信成功`, sent === done);
+    taps = sent = done = 0;
+  };
 
   b.addEventListener("click", () => {
     if (!friends[selected]) return toast("先に友達を追加してね", false);
@@ -272,13 +279,16 @@ QUICK.forEach(q => {
     b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
     burst(b, q.emoji);
 
-    combo++;
+    combo++; taps++;
     badge.textContent = "×" + combo;
     badge.classList.add("show");
     clearTimeout(comboTimer);
-    comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); }, 1500);
+    comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    send(q.body, { level: q.level, quiet: true });
+    send(q.body, { level: q.level, quiet: true }).then(ok => {
+      done++; if (ok) sent++;
+      report();
+    });
   });
   $("quick").appendChild(b);
 });
