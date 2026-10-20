@@ -36,11 +36,70 @@
                   background: var(--bg); border: 1px solid var(--border); border-radius: 18px;
                   transition: transform .08s; }
   .quick button:active { transform: scale(.9); }
-  .quick button.shake { animation: shake .35s; }
+  .quick button.shake, .weather-send.shake { animation: shake .35s; }
   .quick .count { position: absolute; top: 6px; right: 8px; font-size: 13px; font-weight: 700;
                   color: #fff; background: var(--accent); border-radius: 999px; padding: 2px 7px;
                   opacity: 0; transition: opacity .2s; }
   .quick .count.show { opacity: 1; }
+
+  /* ボタンのレベル（送った回数で育つ） */
+  .quick button { --theme: #ff5a36; overflow: visible; }
+  .quick .lvtag { position: absolute; left: 8px; bottom: 9px; font-size: 11px; font-weight: 700; line-height: 1;
+                  color: var(--sub); }
+  .quick .gauge { position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px; border-radius: 3px;
+                  background: var(--border); overflow: hidden; }
+  .quick .gauge i { display: block; height: 100%; background: var(--theme); border-radius: 3px; }
+  .quick .crown, .quick .spark { position: absolute; display: none; pointer-events: none; line-height: 1; }
+  .quick .crown { top: -12px; left: -6px; font-size: 26px; transform: rotate(-20deg); }
+  .quick .spark { top: 8px; right: 10px; font-size: 16px; animation: twinkle 2.4s ease-in-out infinite; }
+  .quick button.lv2 { background: color-mix(in srgb, var(--theme) 12%, var(--bg)); }
+  .quick button.lv3, .quick button.lv4, .quick button.lv5 {
+    background: color-mix(in srgb, var(--theme) 16%, var(--bg));
+    border-color: var(--theme);
+    box-shadow: 0 0 0 1px var(--theme), 0 0 14px color-mix(in srgb, var(--theme) 45%, transparent); }
+  .quick button.lv3 .lvtag, .quick button.lv4 .lvtag, .quick button.lv5 .lvtag { color: var(--theme); }
+  .quick button.lv4 .spark, .quick button.lv5 .spark { display: block; }
+  .quick button.lv5 .crown { display: block; }
+  .quick button.lv5 { background: linear-gradient(135deg, color-mix(in srgb, #ffd54a 30%, var(--bg)), color-mix(in srgb, var(--theme) 22%, var(--bg))); }
+  @keyframes twinkle { 0%, 100% { opacity: .2; transform: scale(.7) rotate(0); } 50% { opacity: 1; transform: scale(1.15) rotate(20deg); } }
+  .lvup { position: fixed; z-index: 30; pointer-events: none; font-weight: 900; font-size: 22px; color: #fff;
+          background: linear-gradient(90deg, #ff5a36, #ffb627); padding: 6px 14px; border-radius: 999px;
+          box-shadow: 0 6px 18px rgba(0,0,0,.25); white-space: nowrap; }
+
+  /* バッジ */
+  .bsum { display: flex; align-items: baseline; gap: 8px; }
+  .bsum b { font-size: 30px; font-variant-numeric: tabular-nums; }
+  .bbar { height: 8px; border-radius: 8px; background: var(--bg); overflow: hidden; margin: 8px 0 4px; border: 1px solid var(--border); }
+  .bbar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb627, #ff5a36); }
+  .bcat { border-top: 1px solid var(--border); }
+  .bcat summary { padding: 12px 0; font-weight: 700; color: var(--text); font-size: 15px; display: flex; justify-content: space-between; }
+  .bcat summary small { color: var(--sub); font-weight: 600; }
+  .bgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-bottom: 14px; }
+  .btile { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px 4px 8px;
+           text-align: center; font-size: 11px; line-height: 1.35; color: var(--text); position: relative; }
+  .btile .be { font-size: 30px; line-height: 1.1; height: 36px; display: flex; align-items: center; justify-content: center; }
+  .btile .be .emo { width: 32px; height: 32px; }
+  .btile .tier { position: absolute; top: 4px; right: 6px; font-size: 14px; }
+  .btile .bn { font-weight: 700; margin-top: 4px; min-height: 2.7em; display: flex; align-items: center; justify-content: center; }
+  .btile .bp { height: 4px; border-radius: 4px; background: var(--border); margin: 5px 6px 0; overflow: hidden; }
+  .btile .bp i { display: block; height: 100%; background: var(--accent); }
+  .btile .bd { color: var(--sub); font-size: 10px; margin-top: 3px; }
+  .btile.off .be { filter: grayscale(1); opacity: .35; }
+  .btile.off .bn { color: var(--sub); }
+  .btile.got { border-color: #ffb627; background: color-mix(in srgb, #ffb627 10%, var(--bg)); }
+
+  /* バッジ獲得・詳細のポップアップ */
+  .modal { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+           background: rgba(0,0,0,.45); padding: 16px; }
+  .modal-card { background: var(--card); border-radius: 22px; padding: 24px 20px 18px; width: 100%; max-width: 320px;
+                text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.35); animation: popin .35s cubic-bezier(.2,1.4,.4,1); }
+  .modal-card .mk { font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: .05em; }
+  .modal-card .me { font-size: 64px; line-height: 1.2; margin: 6px 0; }
+  .modal-card .me .emo { width: 72px; height: 72px; }
+  .modal-card .mn { font-size: 20px; font-weight: 800; }
+  .modal-card .md { font-size: 14px; color: var(--sub); margin: 6px 0 14px; line-height: 1.6; }
+  @keyframes popin { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .confetti { position: fixed; top: -40px; z-index: 39; pointer-events: none; font-size: 22px; }
   @keyframes shake {
     0%, 100% { transform: rotate(0) scale(1); }
     20% { transform: rotate(-12deg) scale(1.08); }
@@ -142,6 +201,9 @@
   .hist .bd { white-space: pre-line; color: var(--text); }
   .hist .n { color: var(--accent); font-weight: 700; margin-left: 4px; }
   .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+  .anagram-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; align-items: stretch; }
+  .anagram-row input { border-radius: 18px; padding: 0 14px; }
+  .anagram-row input.err { border-color: var(--ng); animation: shake .35s; }
   .weather-send { width: 100%; padding: 14px 8px; display: flex; align-items: center; justify-content: center;
                   gap: 8px; font-size: 16px; font-weight: 600; background: var(--bg); color: var(--text);
                   border: 1px solid var(--border); border-radius: 18px; transition: transform .08s; }
@@ -244,8 +306,10 @@
           <ul>
             <li><b>🌤 天気予報</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
             <li><b>🔮 占い</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
-            <li><b>🎲 サイコロ</b><br>1〜6のどれかが届きます。出た目はあなたの画面にも出るので、勝負にも使えるよ。</li>
+            <li><b>🎲 チンチロ</b><br>サイコロ3つを振って、役が届きます。役が出なければ3回まで振り直し。2人以上に送ると、いちばん強い人をあなたの画面で発表します。<br>
+              <small>強い順：👑 ピンゾロ（1・1・1）＞ 🎰 ゾロ目 ＞ 🎉 シゴロ（4・5・6）＞ 目（2つそろって残りの数。6が最強）＞ 💨 目なし ＞ 💀 ヒフミ（1・2・3）</small></li>
             <li><b>💬 ランダム</b><br>「💬 ランダム」タブで作った言葉の中から、ランダムに1つ届きます。</li>
+            <li><b>🔀 アナグラム</b><br>右の入力欄に言葉を入れて押すと、文字がバラバラに並びかわって届きます（例：青いベンチ → いチ青ベン）。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。</li>
           </ul>
         </div>
       </details>
@@ -304,7 +368,26 @@
       </details>
 
       <details>
-        <summary>💾 ⑧ バックアップ</summary>
+        <summary>🏅 ⑧ バッジとレベル</summary>
+        <div class="body">
+          <p><b>バッジ</b>：送った回数・続けた日数・時間・チンチロの役などで、バッジがもらえます。全部で90個以上あって、中には条件がひみつの<b>隠しバッジ</b>（❓）も！</p>
+          <ul>
+            <li>「📊 ログ」タブの <span class="tag">🏅 バッジ</span> で一覧が見られます</li>
+            <li>バッジを押すと、もらえる条件と、あと何回かが分かります</li>
+            <li>もらった瞬間は紙吹雪でお祝いします 🎉</li>
+          </ul>
+          <p><b>レベル</b>：絵文字ボタンは、送った回数で育ちます。</p>
+          <ul>
+            <li>Lv.2（50回）背景に色がつく → Lv.3（200回）ふちが光る → Lv.4（500回）キラキラ → Lv.5（1000回）王冠👑</li>
+            <li>ボタンの左下にレベル、下の線が次のレベルまでのゲージです</li>
+            <li>レベルが上がると、相手に届く通知も 🐦✨ → ✨🐦✨ → 👑🐦👑 と豪華になります（ログ画面でオフにもできます）</li>
+          </ul>
+          <div class="tip-box">📅「◯日連続」のバッジは、この機能を入れた日から数えます。</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>💾 ⑨ バックアップ</summary>
         <div class="body">
           <p>友達やログは<b>このiPhoneの中だけ</b>に保存されています。Safariのデータを消すと消えてしまうので、ときどきバックアップしてね。</p>
           <ol>
@@ -318,7 +401,7 @@
       </details>
 
       <details>
-        <summary>🏠 ⑨ ホーム画面に置く（おすすめ）</summary>
+        <summary>🏠 ⑩ ホーム画面に置く（おすすめ）</summary>
         <div class="body">
           <ol>
             <li>Safari でこのページを開く</li>
@@ -330,7 +413,7 @@
       </details>
 
       <details>
-        <summary>❓ ⑩ 困ったときは</summary>
+        <summary>❓ ⑪ 困ったときは</summary>
         <div class="body">
           <p><b>通知が届かない</b></p>
           <ul>
@@ -442,6 +525,21 @@
       <div class="hero" id="logTotal">0<small>回</small></div>
     </div>
     <div class="card">
+      <h2>🏅 バッジ</h2>
+      <div class="bsum"><b id="badgeCount">0</b><span class="hint" id="badgeOf"></span></div>
+      <div class="bbar"><i id="badgeBar" style="width:0"></i></div>
+      <p class="hint" style="margin:4px 0 8px">バッジを押すと、もらえる条件が見られます。❓ は隠しバッジ（条件はひみつ）。</p>
+      <div id="badgeList"></div>
+      <label class="switch-row" style="margin-top:12px">
+        <span style="font-size:14px">バッジをもらったら、送る相手にも知らせる</span>
+        <input type="checkbox" id="badgeNotify" class="switch">
+      </label>
+      <label class="switch-row" style="margin-top:12px">
+        <span style="font-size:14px">ボタンのレベルが上がると、届く通知も豪華になる<br><small class="hint">Lv.3 🐦✨　Lv.4 ✨🐦✨　Lv.5 👑🐦👑</small></span>
+        <input type="checkbox" id="lvDecorate" class="switch">
+      </label>
+    </div>
+    <div class="card">
       <h2>絵文字ごとの累計</h2>
       <div class="tiles" id="logTiles"></div>
     </div>
@@ -502,6 +600,10 @@
       <button class="weather-send" id="diceSend"></button>
       <button class="weather-send" id="wordSend"></button>
     </div>
+    <div class="anagram-row">
+      <button class="weather-send" id="anagramSend"></button>
+      <input id="anagramText" maxlength="30" placeholder="バラバラにする言葉" autocomplete="off">
+    </div>
     <div class="sent-box" id="sentBox" hidden></div>
   </div>
 
@@ -549,12 +651,12 @@
 <script>
 // 通知のタイトルは絵文字だけ。label はボタンの読み上げ用、sound は Bark の通知音
 const QUICK = [
-  { emoji: "🐦", label: "鳥", sound: "birdsong" },
-  { emoji: "📞", label: "電話", sound: "shake" },
-  { emoji: "🚀", label: "ロケット", sound: "mailsent" },
-  { emoji: "🚂", label: "汽車", sound: "choo" },
-  { emoji: "🤖", label: "ロボット", sound: "healthnotification" },
-  { emoji: "🎺", label: "ラッパ", sound: "sherwoodforest" },
+  { emoji: "🐦", label: "鳥", sound: "birdsong", theme: "#ff5c8a" },
+  { emoji: "📞", label: "電話", sound: "shake", theme: "#e84393" },
+  { emoji: "🚀", label: "ロケット", sound: "mailsent", theme: "#4f9cf5" },
+  { emoji: "🚂", label: "汽車", sound: "choo", theme: "#d9453b" },
+  { emoji: "🤖", label: "ロボット", sound: "healthnotification", theme: "#8c7cf0" },
+  { emoji: "🎺", label: "ラッパ", sound: "sherwoodforest", theme: "#f0a020" },
 ];
 
 // iPhone でも Windows と同じ見た目になるよう、絵文字は Microsoft の Fluent Emoji 画像で表示する
@@ -571,6 +673,8 @@ const EMOJI_IMG = {
   "🔮": "Crystal%20ball/Color/crystal_ball_color.svg",
   "🎲": "Game%20die/Color/game_die_color.svg",
   "💬": "Speech%20balloon/Color/speech_balloon_color.svg",
+  "🔀": "Shuffle%20tracks%20button/Color/shuffle_tracks_button_color.svg",
+  "🎉": "Party%20popper/Color/party_popper_color.svg",
 };
 // 画像がある絵文字は <img>、ない絵文字（昔のログなど）はそのまま文字で
 const emo = (e, cls = "emo") => EMOJI_IMG[e]
@@ -767,6 +871,12 @@ function addLog(emoji) {
   log[ym] = log[ym] || {};
   log[ym][emoji] = (log[ym][emoji] || 0) + 1;
   store.set("log", log);
+  // 日ごとの回数も残す（「◯日連続」などのバッジ用）
+  const day = `${ym}-${String(d.getDate()).padStart(2, "0")}`;
+  const daily = store.get("daily", {});
+  daily[day] = daily[day] || {};
+  daily[day][emoji] = (daily[day][emoji] || 0) + 1;
+  store.set("daily", daily);
 }
 
 // 1人に1通送る。成功したら true（ログにも記録）
@@ -787,7 +897,7 @@ async function sendOne(f, title, body, opts = {}) {
     const res = await fetch(url, { keepalive: true });
     const data = await res.json().catch(() => ({}));
     if (res.ok && (data.code === undefined || data.code === 200)) {
-      addLog(opts.logAs || title);
+      if (!opts.noLog) addLog(opts.logAs || title);
       addHistory(f, { title, subtitle: opts.subtitle, body });
       return true;
     }
@@ -874,6 +984,12 @@ function haptic() {
   try { if (navigator.vibrate) navigator.vibrate(15); else hapticLabel.click(); } catch {}
 }
 
+// ボタンをぷるっと震わせて、絵文字をはじけさせる
+function pop(btn, emoji) {
+  btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+  burst(btn, emoji);
+}
+
 function burst(btn, emoji) {
   const r = btn.getBoundingClientRect();
   const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -908,6 +1024,7 @@ $("weatherSend").onclick = async () => {
   if (!withPlace.length) return toast(`${names(noPlace)} の地域が未登録です（⚙️設定の編集から登録してね）`, false);
   const b = $("weatherSend");
   haptic();
+  pop(b, WEATHER_LOG);
   b.disabled = true;
   try {
     const m = await W();
@@ -929,6 +1046,7 @@ $("weatherSend").onclick = async () => {
       return it;
     }));
     showSent([...items, ...noPlace.map(f => ({ f, ok: false, title: "🌤 天気予報", note: "地域が未登録" }))]);
+    if (items.some(i => i.ok)) onSent("weather", { recipients: items.filter(i => i.ok).length });
     const r = { ok: items.filter(i => i.ok).map(i => i.f), ng: items.filter(i => !i.ok).map(i => i.f) };
     if (r.ng.length) toast(`${names(r.ng)} への天気予報の送信に失敗しました`, false);
     else if (noPlace.length) toast(`${names(r.ok)} に送りました（${names(noPlace)} は地域が未登録）`, true);
@@ -958,6 +1076,7 @@ $("luckySend").onclick = async () => {
   const list = needTargets();
   if (!list) return;
   haptic();
+  pop($("luckySend"), LUCKY_LOG);
   // 通知でパッと見えるのは「タイトル・サブタイトル・本文2行」なので、アイテムをサブタイトルにする
   // 占いの結果は1人ずつちがうものにする
   const r = await sendAll(list, () => ({
@@ -967,31 +1086,125 @@ $("luckySend").onclick = async () => {
   }));
   showSent(r.items);
   toastResult(r, "占いを");
+  const got = r.items.filter(i => i.ok);
+  if (got.length) onSent("lucky", {
+    recipients: got.length,
+    results: got.map(i => ({ item: i.subtitle, stars: (i.body.split("\n")[1].match(/★/g) || []).length })),
+  });
 };
 
-// ---- サイコロ ----
+// ---- チンチロ ----
+// サイコロ3つを振って役を決める。役が出なければ3回まで振り直し（本来のルールどおり）
 const DICE_LOG = "🎲";
 const DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-$("diceSend").innerHTML = `${emo(DICE_LOG)}サイコロ`;
+
+// 3つの目から役を判定。rank は強さ（大きいほど強い）
+function judgeChinchiro(dice) {
+  const [a, b, c] = [...dice].sort((x, y) => x - y);
+  if (a === c) return a === 1
+    ? { type: "pinzoro", rank: 100, label: "ピンゾロ！！", note: "5倍づけ 👑" }
+    : { type: "zoro", rank: 50 + a, label: `${a}のゾロ目（アラシ）！`, note: "3倍づけ 🎰", zoro: a };
+  if (a === 4 && b === 5 && c === 6) return { type: "shigoro", rank: 40, label: "シゴロ！", note: "2倍づけ 🎉" };
+  if (a === 1 && b === 2 && c === 3) return { type: "hifumi", rank: 0, label: "ヒフミ…", note: "2倍払い 💀" };
+  if (a === b || b === c) {
+    const me = a === b ? c : a; // 2つそろったときの、残りの1つが「目」
+    return { type: "me", rank: 10 + me, label: `${me}の目`, note: me === 6 ? "最強の目 💪" : me === 1 ? "いちばん弱い目…" : "", me };
+  }
+  return null; // 役なし
+}
+
+function rollChinchiro() {
+  let dice;
+  for (let tries = 1; tries <= 3; tries++) {
+    dice = [0, 0, 0].map(() => 1 + Math.floor(Math.random() * 6));
+    const hand = judgeChinchiro(dice);
+    if (hand) return { ...hand, dice, tries };
+  }
+  return { type: "menashi", rank: 1, label: "目なし…", note: "3回振っても役なし 💨", dice, tries: 3 };
+}
+
+$("diceSend").innerHTML = `${emo(DICE_LOG)}チンチロ`;
 $("diceSend").onclick = async () => {
   const list = needTargets();
   if (!list) return;
   haptic();
-  burst($("diceSend"), DICE_LOG);
-  // 1人ずつサイコロを振る。出た目は送った側にも表示
-  const rolls = new Map(list.map(f => [f.key, 1 + Math.floor(Math.random() * 6)]));
+  pop($("diceSend"), DICE_LOG);
+  // 1人ずつ振る。結果は送った側にも表示して、2人以上なら一番強い人を発表
+  const rolls = new Map(list.map(f => [f.key, rollChinchiro()]));
   const r = await sendAll(list, f => {
-    const n = rolls.get(f.key);
-    return { title: "🎲 サイコロ", body: `${DICE_FACES[n - 1]} ${n} が出たよ！`, opts: { logAs: DICE_LOG } };
+    const h = rolls.get(f.key);
+    const faces = h.dice.map(n => DICE_FACES[n - 1]).join(" ");
+    return {
+      title: "🎲 チンチロ",
+      body: [h.label, h.note].filter(Boolean).join(" "),
+      opts: { subtitle: `${faces}${h.tries > 1 ? `（${h.tries}投目）` : ""}`, logAs: DICE_LOG },
+    };
   });
   showSent(r.items);
+  if (r.ok.length) onSent("dice", { recipients: r.ok.length, hands: r.ok.map(f => rolls.get(f.key)) });
   if (r.ng.length) return toastResult(r);
-  toast("🎲 " + r.ok.map(f => list.length > 1 ? `${f.name}:${rolls.get(f.key)}` : `${rolls.get(f.key)} を ${f.name} に送りました ✓`).join("  "), true);
+  if (list.length === 1) return toast(`🎲 ${rolls.get(list[0].key).label} を ${list[0].name} に送りました ✓`, true);
+  const best = Math.max(...r.ok.map(f => rolls.get(f.key).rank));
+  const winners = r.ok.filter(f => rolls.get(f.key).rank === best);
+  toast(`🎲 ${r.ok.map(f => `${f.name}:${rolls.get(f.key).label}`).join(" ")} → 👑${names(winners)}`, true);
 };
 
 // ---- ランダムワード ----
 const WORD_LOG = "💬";
 const getWords = () => store.get("words", []);
+
+// ---- アナグラム ----
+// 入力した言葉の文字をランダムに並べかえて送る。たまたま元どおりに揃ったらお祝い
+const ANAGRAM_LOG = "🔀";
+// 絵文字や濁点つきの文字が壊れないよう、見た目の1文字ずつに分ける
+const splitChars = s => typeof Intl !== "undefined" && Intl.Segmenter
+  ? [...new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(s)].map(x => x.segment)
+  : Array.from(s);
+function shuffleChars(chars) {
+  const a = [...chars];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.join("");
+}
+
+$("anagramSend").innerHTML = `${emo(ANAGRAM_LOG)}アナグラム`;
+$("anagramText").addEventListener("input", () => $("anagramText").classList.remove("err"));
+$("anagramText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("anagramSend").click(); });
+$("anagramSend").onclick = async () => {
+  const text = $("anagramText").value.trim();
+  if (!text) {
+    const box = $("anagramText");
+    box.classList.remove("err"); void box.offsetWidth; box.classList.add("err");
+    box.focus();
+    return toast("バラバラにする言葉を入力してね", false);
+  }
+  const list = needTargets();
+  if (!list) return;
+  haptic();
+  pop($("anagramSend"), ANAGRAM_LOG);
+  const chars = splitChars(text);
+  // 全部同じ文字（「ああ」など）や1文字だと必ず揃ってしまうので、お祝いは2種類以上の文字があるときだけ
+  const canMatch = new Set(chars).size >= 2;
+  const shuffled = new Map(list.map(f => [f.key, shuffleChars(chars)]));
+  const isMatch = s => canMatch && s === text;
+  const r = await sendAll(list, f => {
+    const s = shuffled.get(f.key);
+    return isMatch(s)
+      ? { title: "🎉 アナグラム大成功！", body: `🎊 ${s} 🎊\nバラバラにしたのに元どおり！奇跡！`, opts: { subtitle: "ぴったり揃った ✨", logAs: ANAGRAM_LOG } }
+      : { title: "🔀 アナグラム", body: s, opts: { logAs: ANAGRAM_LOG } };
+  });
+  showSent(r.items);
+  const hits = r.ok.filter(f => isMatch(shuffled.get(f.key)));
+  if (hits.length) {
+    confetti();
+    for (let i = 0; i < 3; i++) setTimeout(() => burst($("anagramSend"), "🎉"), i * 150);
+  }
+  if (r.ok.length) onSent("anagram", { recipients: r.ok.length, match: hits.length > 0 && chars.length >= 3 });
+  if (r.ng.length) return toastResult(r);
+  toast(hits.length ? `🎉 元どおりに揃った！（${names(hits)}）` : `🔀 ${list.length === 1 ? shuffled.get(list[0].key) + " を" : ""}${names(r.ok)} に送りました ✓`, true);
+};
 
 // 以前は天気のコメントとランダムワードに例文が最初から入っていたので、
 // 書き換えずに残っている例文だけを1回だけ消す（自分で書いたものは残す）
@@ -1028,6 +1241,7 @@ $("wordSend").onclick = async () => {
   const groups = getWords().filter(g => g.bodies.length);
   if (!groups.length) return toast("「💬 ランダム」タブで本文を登録してね", false);
   haptic();
+  pop($("wordSend"), WORD_LOG);
   // ワードも1人ずつランダムに選ぶ
   const r = await sendAll(list, () => {
     const g = rand(groups);
@@ -1035,6 +1249,7 @@ $("wordSend").onclick = async () => {
   });
   showSent(r.items);
   toastResult(r, "ワードを");
+  if (r.ok.length) onSent("word", { recipients: r.ok.length });
 };
 
 // ワード設定画面。入力するたびに自動保存
@@ -1086,6 +1301,10 @@ QUICK.forEach(q => {
   const badge = document.createElement("span");
   badge.className = "count";
   b.appendChild(badge);
+  // レベル表示（Lv・ゲージ・王冠・キラキラ）
+  b.dataset.emoji = q.emoji;
+  b.style.setProperty("--theme", q.theme);
+  b.insertAdjacentHTML("beforeend", `<span class="lvtag"></span><span class="gauge"><i></i></span><span class="crown">👑</span><span class="spark">✨</span>`);
   // 連打が止まって全部の送信結果が返ったら、何件届いたかを表示（複数人なら人数×回数）
   let combo = 0, comboTimer, expected = 0, sent = 0, done = 0;
   const report = () => {
@@ -1105,11 +1324,14 @@ QUICK.forEach(q => {
     badge.textContent = "×" + combo;
     badge.classList.add("show");
     clearTimeout(comboTimer);
-    comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
+    comboTimer = setTimeout(() => { onComboEnd(combo); combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    sendAll(list, () => ({ title: q.emoji, body: "", opts: { sound: q.sound, level: q.level } })).then(r => {
+    const thisCombo = combo;
+    // レベルが高いと通知のタイトルが豪華になる（ログは絵文字で数える）
+    sendAll(list, () => ({ title: decorate(q.emoji), body: "", opts: { sound: q.sound, level: q.level, logAs: q.emoji } })).then(r => {
       done += r.total; sent += r.ok.length;
       report();
+      if (r.ok.length) onSent("quick", { emoji: q.emoji, combo: thisCombo, recipients: r.ok.length });
     });
   });
   $("quick").appendChild(b);
@@ -1350,7 +1572,7 @@ function updateOrder(log) {
   const old = new Set();
   Object.values(log).forEach(o => Object.keys(o).forEach(e => old.add(e)));
   const cur = QUICK.map(q => q.emoji);
-  const extra = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, WORD_LOG];
+  const extra = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, WORD_LOG, ANAGRAM_LOG];
   ORDER = [...cur, ...extra, ...[...old].filter(e => !cur.includes(e) && !extra.includes(e) && e !== FREE), ...(old.has(FREE) ? [FREE] : [])];
 }
 let viewYear = new Date().getFullYear();
@@ -1396,6 +1618,7 @@ function renderLog() {
   renderChart(log);
   historyShown = 30;
   renderHistory();
+  renderBadges();
   renderBackupInfo();
 }
 let showMonth = () => {};
@@ -1457,7 +1680,8 @@ function renderChart(log) {
 
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
-const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history"];
+const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
+  "daily", "stats", "badges", "levels", "badgeNotify", "lvDecorate"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1525,6 +1749,23 @@ $("importFile").onchange = async e => {
     const hist = store.get("history", []);
     (d.history || []).forEach(x => { if (!hist.some(y => y.t === x.t && y.to === x.to)) hist.push(x); });
     store.set("history", hist.sort((a, b) => b.t - a.t).slice(0, HISTORY_MAX));
+    // 日ごとの回数は足す。バッジは両方のを持つ。記録は大きいほう・両方の和集合
+    const daily = store.get("daily", {});
+    Object.entries(d.daily || {}).forEach(([k, o]) => {
+      daily[k] = daily[k] || {};
+      Object.entries(o).forEach(([em, n]) => daily[k][em] = (daily[k][em] || 0) + n);
+    });
+    store.set("daily", daily);
+    const badges = store.get("badges", {});
+    Object.entries(d.badges || {}).forEach(([id, t]) => { if (badges[id] === undefined) badges[id] = t; });
+    store.set("badges", badges);
+    const s = store.get("stats", {}), s2 = d.stats || {};
+    ["maxCombo", "luckyFive", "luckyOne"].forEach(k => s[k] = Math.max(s[k] || 0, s2[k] || 0));
+    ["ccMe", "luckyItems"].forEach(k => s[k] = [...new Set([...(s[k] || []), ...(s2[k] || [])])]);
+    s.ccHands = s.ccHands || {};
+    Object.entries(s2.ccHands || {}).forEach(([h, n]) => s.ccHands[h] = (s.ccHands[h] || 0) + n);
+    s.flags = { ...(s2.flags || {}), ...(s.flags || {}) };
+    store.set("stats", s);
   }
 
   friends = store.get("friends", []);
@@ -1532,6 +1773,9 @@ $("importFile").onchange = async e => {
   setEditing(null);
   setTargets(store.get("targets", targets)); // いなくなった友達は選択から外れる
   renderLog();
+  renderLevels(false);
+  checkBadges(false);
+  renderBadges();
   toast(importMode === "overwrite" ? "バックアップから戻しました ✓" : "合算しました ✓", true);
 };
 
@@ -1554,6 +1798,407 @@ $("bannerLater").onclick = () => {
   store.set("snoozeUntil", Date.now() + DAY); // 1日後にまた出す
   $("backupBanner").hidden = true;
 };
+
+// =====================================================================
+// ---- ボタンのレベル ----
+// 絵文字ごとの累計回数でレベルが上がる。Lv.1〜5
+const LEVELS = [0, 50, 200, 500, 1000];
+const levelOf = n => LEVELS.filter(x => n >= x).length;
+
+// これまでの絵文字ごとの合計（月ごとのログを足し合わせる）
+function emojiTotals() {
+  const t = {};
+  Object.values(store.get("log", {})).forEach(o => Object.entries(o).forEach(([e, n]) => t[e] = (t[e] || 0) + n));
+  return t;
+}
+
+// レベルに合わせて届く通知のタイトルを豪華にする
+function decorate(e) {
+  if (!store.get("lvDecorate", true)) return e;
+  const lv = levelOf(emojiTotals()[e] || 0);
+  return lv >= 5 ? `👑${e}👑` : lv === 4 ? `✨${e}✨` : lv === 3 ? `${e}✨` : e;
+}
+
+// ボタンの見た目を今のレベルにする。上がったボタンがあれば LEVEL UP の演出
+function renderLevels(celebrate) {
+  const t = emojiTotals();
+  const saved = store.get("levels", {});
+  document.querySelectorAll("#quick button").forEach(b => {
+    const e = b.dataset.emoji, n = t[e] || 0, lv = levelOf(n);
+    b.classList.remove("lv1", "lv2", "lv3", "lv4", "lv5");
+    b.classList.add("lv" + lv);
+    b.querySelector(".lvtag").textContent = "Lv." + lv;
+    const next = LEVELS[lv];
+    b.querySelector(".gauge i").style.width = next === undefined ? "100%"
+      : `${Math.round((n - LEVELS[lv - 1]) / (next - LEVELS[lv - 1]) * 100)}%`;
+    b.title = next === undefined ? `${n}回（最大レベル）` : `${n}回（次のレベルまであと${next - n}回）`;
+    if (celebrate && saved[e] && lv > saved[e]) levelUp(b, e, lv);
+    saved[e] = lv;
+  });
+  store.set("levels", saved);
+}
+
+function levelUp(btn, e, lv) {
+  for (let i = 0; i < 3; i++) setTimeout(() => burst(btn, i === 1 && lv >= 5 ? "👑" : e), i * 120);
+  const r = btn.getBoundingClientRect();
+  const tag = document.createElement("div");
+  tag.className = "lvup";
+  tag.textContent = `LEVEL UP! Lv.${lv}`;
+  document.body.appendChild(tag);
+  tag.style.left = `${Math.max(8, Math.min(innerWidth - tag.offsetWidth - 8, r.left + r.width / 2 - tag.offsetWidth / 2))}px`;
+  tag.style.top = `${r.top - 10}px`;
+  tag.animate([
+    { transform: "translateY(10px) scale(.6)", opacity: 0 },
+    { transform: "translateY(-30px) scale(1.1)", opacity: 1, offset: .25 },
+    { transform: "translateY(-50px) scale(1)", opacity: 1, offset: .8 },
+    { transform: "translateY(-70px) scale(1)", opacity: 0 },
+  ], { duration: 1800, easing: "ease-out" }).onfinish = () => tag.remove();
+  haptic();
+}
+
+// =====================================================================
+// ---- バッジ ----
+// 送った記録（ログ・日ごとの記録・特別な出来事）から、もらえるバッジを判定する
+
+const BADGE_CATS = ["回数", "合計", "いろいろ送る", "続ける", "連打", "時間", "チンチロ", "占い", "コンプリート", "隠しバッジ"];
+const CC_HANDS = ["pinzoro", "zoro", "shigoro", "me", "menashi", "hifumi"];
+const TIER = ["🥉", "🥈", "🥇"];
+const EMOJI_BADGE_NAMES = {
+  "🐦": ["さえずり見習い", "さえずり名人", "さえずりマスター"],
+  "📞": ["もしもしデビュー", "電話魔", "ホットライン"],
+  "🚀": ["打ち上げ成功", "宇宙飛行士", "銀河の果てまで"],
+  "🚂": ["見習い車掌", "ベテラン機関士", "銀河鉄道"],
+  "🤖": ["ロボ起動", "ロボ博士", "ロボ帝国"],
+  "🎺": ["ラッパ入門", "ラッパ隊長", "大オーケストラ"],
+};
+const FEATURES = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, WORD_LOG];
+
+const BADGES = [
+  // 回数：絵文字ごとに 10 / 100 / 1000 回
+  ...QUICK.flatMap(q => [10, 100, 1000].map((goal, i) => ({
+    id: `e${q.emoji}${goal}`, cat: "回数", e: q.emoji, tier: TIER[i], name: EMOJI_BADGE_NAMES[q.emoji][i],
+    desc: `${q.emoji} を ${goal.toLocaleString()} 回送る`, goal, val: c => c.t[q.emoji] || 0,
+  }))),
+  // 合計
+  ...[[1, "🌱", "はじめの一歩"], [100, "🌿", "なかよし"], [500, "🌳", "大親友"], [1000, "💯", "せんかい達成"],
+    [3000, "🏔", "ベテラン"], [10000, "👑", "レジェンド"]].map(([goal, e, name]) => ({
+    id: `total${goal}`, cat: "合計", e, name, desc: `ぜんぶで ${goal.toLocaleString()} 回送る`, goal, val: c => c.total,
+  })),
+  // いろいろ送るボタン
+  { id: "w1", cat: "いろいろ送る", e: "🌤", name: "お天気デビュー", desc: "天気予報を1回送る", goal: 1, val: c => c.t["🌤"] || 0 },
+  { id: "w30", cat: "いろいろ送る", e: "🌤", name: "お天気キャスター", desc: "天気予報を30回送る", goal: 30, val: c => c.t["🌤"] || 0 },
+  { id: "w100", cat: "いろいろ送る", e: "🌤", name: "気象予報の神", desc: "天気予報を100回送る", goal: 100, val: c => c.t["🌤"] || 0 },
+  { id: "l1", cat: "いろいろ送る", e: "🔮", name: "占いデビュー", desc: "占いを1回送る", goal: 1, val: c => c.t["🔮"] || 0 },
+  { id: "l30", cat: "いろいろ送る", e: "🔮", name: "占い師", desc: "占いを30回送る", goal: 30, val: c => c.t["🔮"] || 0 },
+  { id: "l100", cat: "いろいろ送る", e: "🔮", name: "大占い師", desc: "占いを100回送る", goal: 100, val: c => c.t["🔮"] || 0 },
+  { id: "d1", cat: "いろいろ送る", e: "🎲", name: "チンチロデビュー", desc: "チンチロを1回送る", goal: 1, val: c => c.t["🎲"] || 0 },
+  { id: "d100", cat: "いろいろ送る", e: "🎲", name: "ギャンブラー", desc: "チンチロを100回送る", goal: 100, val: c => c.t["🎲"] || 0 },
+  { id: "r1", cat: "いろいろ送る", e: "💬", name: "ひとことデビュー", desc: "ランダムワードを1回送る", goal: 1, val: c => c.t["💬"] || 0 },
+  { id: "r50", cat: "いろいろ送る", e: "💬", name: "おしゃべり", desc: "ランダムワードを50回送る", goal: 50, val: c => c.t["💬"] || 0 },
+  { id: "r200", cat: "いろいろ送る", e: "💬", name: "言葉の魔術師", desc: "ランダムワードを200回送る", goal: 200, val: c => c.t["💬"] || 0 },
+  // 続ける
+  ...[[3, "📅", "三日坊主卒業"], [7, "🗓", "一週間皆勤"], [14, "🌟", "二週間つづいた"], [30, "🏆", "皆勤賞"],
+    [100, "💎", "百日つづいた"], [365, "🌈", "一年ずっと"]].map(([goal, e, name]) => ({
+    id: `streak${goal}`, cat: "続ける", e, name, desc: `${goal}日連続で送る`, goal, val: c => c.streak,
+  })),
+  ...[[10, "🧭", "10日送った"], [50, "🗺", "50日送った"], [100, "🏯", "100日送った"], [365, "🌏", "365日送った"]].map(([goal, e, name]) => ({
+    id: `days${goal}`, cat: "続ける", e, name, desc: `送った日が合計${goal}日になる（連続じゃなくてOK）`, goal, val: c => c.days,
+  })),
+  { id: "day100", cat: "続ける", e: "⚡", name: "フィーバー", desc: "1日に100回送る", goal: 100, val: c => c.maxDay },
+  { id: "day500", cat: "続ける", e: "🌋", name: "大爆発", desc: "1日に500回送る", goal: 500, val: c => c.maxDay },
+  // 連打
+  ...[[10, "👆", "連打はじめ"], [30, "🔥", "連打名人"], [50, "💥", "連打王"], [100, "🌪", "連打の神"]].map(([goal, e, name]) => ({
+    id: `combo${goal}`, cat: "連打", e, name, desc: `同じボタンを${goal}連打する`, goal, val: c => c.s.maxCombo || 0,
+  })),
+  // 時間
+  { id: "early", cat: "時間", e: "🐓", name: "早起きさん", desc: "朝5時台に送る", flag: true },
+  { id: "night", cat: "時間", e: "🦉", name: "夜ふかし", desc: "夜中の2時〜3時台に送る", flag: true },
+  { id: "lunch", cat: "時間", e: "🍱", name: "お昼休み", desc: "お昼の12時台に送る", flag: true },
+  { id: "snack", cat: "時間", e: "🍩", name: "3時のおやつ", desc: "15時台に送る", flag: true },
+  { id: "weekend", cat: "時間", e: "🏖", name: "週末も一緒", desc: "土曜と日曜の両方に送る（同じ週末）", flag: true },
+  // チンチロ
+  { id: "ccShigoro", cat: "チンチロ", e: "🌀", name: "シゴロ", desc: "チンチロで 4・5・6 を出す", goal: 1, val: c => c.cc("shigoro") },
+  { id: "ccShigoro5", cat: "チンチロ", e: "🔥", name: "シゴロ使い", desc: "チンチロでシゴロを5回出す", goal: 5, val: c => c.cc("shigoro") },
+  { id: "ccZoro", cat: "チンチロ", e: "🎰", name: "アラシ", desc: "チンチロでゾロ目（2〜6）を出す", goal: 1, val: c => c.cc("zoro") },
+  { id: "ccMe6", cat: "チンチロ", e: "💪", name: "最強の目", desc: "チンチロで6の目を出す", goal: 1, val: c => (c.s.ccMe || []).includes(6) ? 1 : 0 },
+  { id: "ccAllMe", cat: "チンチロ", e: "🎯", name: "目コンプ", desc: "チンチロで1〜6の目を全部出す", goal: 6, val: c => (c.s.ccMe || []).length },
+  { id: "ccHifumi", cat: "チンチロ", e: "💀", name: "ヒフミ", desc: "チンチロで 1・2・3 を出す（負けだけどバッジはもらえる）", goal: 1, val: c => c.cc("hifumi") },
+  { id: "ccMenashi", cat: "チンチロ", e: "💨", name: "目なし", desc: "チンチロで3回振っても役が出ない", goal: 1, val: c => c.cc("menashi") },
+  { id: "ccAllHands", cat: "チンチロ", e: "📚", name: "役コンプ", desc: "ピンゾロ・ゾロ目・シゴロ・目・目なし・ヒフミを全部出す", goal: 6, val: c => CC_HANDS.filter(h => c.cc(h)).length },
+  // 占い
+  { id: "luck5", cat: "占い", e: "⭐", name: "最高の一日", desc: "占いで★5つを引く", goal: 1, val: c => c.s.luckyFive || 0 },
+  { id: "luck5x5", cat: "占い", e: "🍀", name: "強運の持ち主", desc: "占いで★5つを5回引く", goal: 5, val: c => c.s.luckyFive || 0 },
+  { id: "luckItems", cat: "占い", e: "🎁", name: "アイテム図鑑", desc: `ラッキーアイテムを全${LUCKY_ITEMS.length}種類出す`, goal: LUCKY_ITEMS.length, val: c => (c.s.luckyItems || []).length },
+  // コンプリート
+  { id: "allEmoji", cat: "コンプリート", e: "🌈", name: "ぜんぶ送った", desc: "6つの絵文字を全部1回以上送る", goal: 6, val: c => QUICK.filter(q => c.t[q.emoji]).length },
+  { id: "allFeat", cat: "コンプリート", e: "🧰", name: "なんでも屋", desc: "天気・占い・チンチロ・ランダムを全部1回以上送る", goal: 4, val: c => FEATURES.filter(e => c.t[e]).length },
+  { id: "allLv3", cat: "コンプリート", e: "🌟", name: "みんな育った", desc: "6つのボタンを全部 Lv.3 にする", goal: 6, val: c => QUICK.filter(q => levelOf(c.t[q.emoji] || 0) >= 3).length },
+  { id: "allLv5", cat: "コンプリート", e: "👑", name: "王国の完成", desc: "6つのボタンを全部 Lv.5 にする", goal: 6, val: c => QUICK.filter(q => levelOf(c.t[q.emoji] || 0) >= 5).length },
+  // 隠しバッジ（もらうまで条件はひみつ）
+  { id: "h1111", cat: "隠しバッジ", e: "🕚", name: "ゾロ目タイム", desc: "11:11 ちょうどに送る", flag: true, hidden: true },
+  { id: "h2222", cat: "隠しバッジ", e: "🌃", name: "夜のゾロ目", desc: "22:22 ちょうどに送る", flag: true, hidden: true },
+  { id: "h0000", cat: "隠しバッジ", e: "🕛", name: "シンデレラ", desc: "0:00 ちょうどに送る", flag: true, hidden: true },
+  { id: "h777", cat: "隠しバッジ", e: "🎰", name: "スリーセブン", desc: "ぜんぶで777回送る", goal: 777, val: c => c.total, hidden: true },
+  { id: "hCombo77", cat: "隠しバッジ", e: "7️⃣", name: "ラッキーセブン", desc: "ちょうど77連打で止める", flag: true, hidden: true },
+  { id: "hSpeed", cat: "隠しバッジ", e: "⚡", name: "指が止まらない", desc: "1分間に100回押す", flag: true, hidden: true },
+  { id: "hMoon", cat: "隠しバッジ", e: "🌕", name: "お月見", desc: "満月の日に送る", flag: true, hidden: true },
+  { id: "hNewYear", cat: "隠しバッジ", e: "🎍", name: "あけおめ", desc: "1月1日に送る", flag: true, hidden: true },
+  { id: "hValentine", cat: "隠しバッジ", e: "💝", name: "バレンタイン", desc: "2月14日に送る", flag: true, hidden: true },
+  { id: "hTanabata", cat: "隠しバッジ", e: "🎋", name: "織姫と彦星", desc: "7月7日に送る", flag: true, hidden: true },
+  { id: "hHalloween", cat: "隠しバッジ", e: "🎃", name: "トリック・オア・トリート", desc: "10月31日に送る", flag: true, hidden: true },
+  { id: "hXmas", cat: "隠しバッジ", e: "🎄", name: "メリークリスマス", desc: "12月25日に送る", flag: true, hidden: true },
+  { id: "hNewYearsEve", cat: "隠しバッジ", e: "🔔", name: "ゆく年くる年", desc: "12月31日に送る", flag: true, hidden: true },
+  { id: "hFri13", cat: "隠しバッジ", e: "😱", name: "13日の金曜日", desc: "13日の金曜日に送る", flag: true, hidden: true },
+  { id: "hLongTime", cat: "隠しバッジ", e: "🐌", name: "おひさしぶり", desc: "30日以上あけてから送る", flag: true, hidden: true },
+  { id: "hRainbowDay", cat: "隠しバッジ", e: "🌈", name: "虹の日", desc: "1日のうちに6つの絵文字を全部送る", goal: 1, val: c => c.rainbowDay ? 1 : 0, hidden: true },
+  { id: "hPinzoro", cat: "隠しバッジ", e: "👑", name: "ピンゾロ", desc: "チンチロで 1・1・1 を出す", goal: 1, val: c => c.cc("pinzoro"), hidden: true },
+  { id: "h666", cat: "隠しバッジ", e: "😈", name: "神の手", desc: "チンチロで 6・6・6 を出す", flag: true, hidden: true },
+  { id: "hShigoro2", cat: "隠しバッジ", e: "⚡", name: "連続シゴロ", desc: "チンチロで2回続けてシゴロを出す", flag: true, hidden: true },
+  { id: "hHifumi3", cat: "隠しバッジ", e: "🕳", name: "どん底", desc: "チンチロでヒフミを3回出す", goal: 3, val: c => c.cc("hifumi"), hidden: true },
+  { id: "hFirstPin", cat: "隠しバッジ", e: "🌠", name: "一発ピンゾロ", desc: "チンチロで1投目にピンゾロを出す", flag: true, hidden: true },
+  { id: "hUnlucky", cat: "隠しバッジ", e: "😇", name: "逆にレア", desc: "占いで★1つを3回引く", goal: 3, val: c => c.s.luckyOne || 0, hidden: true },
+  { id: "hBirdCombo", cat: "隠しバッジ", e: "🪺", name: "巣立ち", desc: "🐦 を1回の連打で100回送る", flag: true, hidden: true },
+  { id: "hBadge30", cat: "隠しバッジ", e: "🏅", name: "バッジコレクター", desc: "バッジを30個集める", goal: 30, val: c => c.badgeCount, hidden: true },
+  { id: "hAnagram", cat: "隠しバッジ", e: "🎉", name: "奇跡の一致", desc: "アナグラムで元の言葉のまま揃う（3文字以上）", flag: true, hidden: true },
+];
+
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// バッジ判定に使う数字をまとめる
+function badgeContext() {
+  const t = emojiTotals();
+  const daily = store.get("daily", {});
+  const days = Object.keys(daily).sort();
+  // いちばん長かった連続日数
+  let streak = 0, run = 0, prev = null;
+  days.forEach(k => {
+    const ms = Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10));
+    run = prev !== null && ms - prev === 86400000 ? run + 1 : 1;
+    streak = Math.max(streak, run);
+    prev = ms;
+  });
+  const sumDay = o => Object.values(o).reduce((a, b) => a + b, 0);
+  const s = store.get("stats", {});
+  const got = store.get("badges", {});
+  return {
+    cc: hand => (s.ccHands || {})[hand] || 0, // チンチロの役ごとの回数
+    t,
+    total: Object.values(t).reduce((a, b) => a + b, 0),
+    streak,
+    days: days.length,
+    maxDay: Math.max(0, ...days.map(k => sumDay(daily[k]))),
+    rainbowDay: days.some(k => QUICK.every(q => daily[k][q.emoji])),
+    badgeCount: BADGES.filter(b => got[b.id] !== undefined).length,
+    s,
+  };
+}
+
+const badgeProgress = (b, c) => b.flag ? ((c.s.flags || {})[b.id] ? 1 : 0) : b.val(c);
+const badgeGoal = b => b.flag ? 1 : b.goal;
+
+// 新しくもらえるバッジがないか調べる。celebrate=false なら黙ってもらう（はじめて開いたとき用）
+function checkBadges(celebrate = true) {
+  const got = store.get("badges", {});
+  const fresh = [];
+  // 「バッジを◯個集める」のように、もらうと次がもらえることがあるので数回まわす
+  for (let round = 0; round < 3; round++) {
+    const c = badgeContext();
+    BADGES.forEach(b => {
+      if (got[b.id] === undefined && badgeProgress(b, c) >= badgeGoal(b)) {
+        got[b.id] = celebrate ? Date.now() : 0;
+        fresh.push(b);
+      }
+    });
+    store.set("badges", got);
+  }
+  if (celebrate && fresh.length) {
+    fresh.forEach(b => badgeQueue.push(b));
+    showNextBadge();
+    notifyBadges(fresh);
+  }
+  if (!$("pageLog").hidden) renderBadges();
+  return fresh;
+}
+
+// 送ったあとに呼ぶ。時刻・チンチロの役・占いの結果など、その場でしか分からないことを記録する
+const tapTimes = [];
+function onSent(kind, info = {}) {
+  const s = store.get("stats", {});
+  const flags = s.flags = s.flags || {};
+  const now = new Date(), h = now.getHours(), m = now.getMinutes();
+  const md = `${now.getMonth() + 1}/${now.getDate()}`;
+
+  if (h === 5) flags.early = true;
+  if (h === 2 || h === 3) flags.night = true;
+  if (h === 12) flags.lunch = true;
+  if (h === 15) flags.snack = true;
+  if (h === 11 && m === 11) flags.h1111 = true;
+  if (h === 22 && m === 22) flags.h2222 = true;
+  if (h === 0 && m === 0) flags.h0000 = true;
+  const special = { "1/1": "hNewYear", "2/14": "hValentine", "7/7": "hTanabata", "10/31": "hHalloween", "12/25": "hXmas", "12/31": "hNewYearsEve" };
+  if (special[md]) flags[special[md]] = true;
+  if (now.getDate() === 13 && now.getDay() === 5) flags.hFri13 = true;
+  // 週末：土曜に送った日を覚えておいて、次の日曜にも送ったら
+  if (now.getDay() === 6) s.lastSat = dayKey(now);
+  if (now.getDay() === 0) {
+    const sat = new Date(now); sat.setDate(now.getDate() - 1);
+    if (s.lastSat === dayKey(sat)) flags.weekend = true;
+  }
+  if (s.lastT && now - s.lastT >= 30 * 86400000) flags.hLongTime = true;
+  s.lastT = now.getTime();
+
+  if (kind === "quick") {
+    s.maxCombo = Math.max(s.maxCombo || 0, info.combo || 0);
+    if (info.emoji === "🐦" && info.combo >= 100) flags.hBirdCombo = true;
+    tapTimes.push(now.getTime());
+    while (tapTimes.length && now - tapTimes[0] > 60000) tapTimes.shift();
+    if (tapTimes.length >= 100) flags.hSpeed = true;
+  }
+  if (kind === "dice") {
+    // チンチロ：役ごとの回数、出た目の種類、連続シゴロなど
+    s.ccHands = s.ccHands || {};
+    s.ccMe = s.ccMe || [];
+    (info.hands || []).forEach(h => {
+      s.ccHands[h.type] = (s.ccHands[h.type] || 0) + 1;
+      if (h.type === "me" && !s.ccMe.includes(h.me)) s.ccMe.push(h.me);
+      if (h.type === "zoro" && h.zoro === 6) flags.h666 = true;
+      if (h.type === "pinzoro" && h.tries === 1) flags.hFirstPin = true;
+      if (h.type === "shigoro" && s.ccLast === "shigoro") flags.hShigoro2 = true;
+      s.ccLast = h.type;
+    });
+  }
+  if (kind === "anagram" && info.match) flags.hAnagram = true;
+  if (kind === "lucky") {
+    s.luckyItems = s.luckyItems || [];
+    (info.results || []).forEach(r => {
+      if (r.stars === 5) s.luckyFive = (s.luckyFive || 0) + 1;
+      if (r.stars === 1) s.luckyOne = (s.luckyOne || 0) + 1;
+      if (r.item && !s.luckyItems.includes(r.item)) s.luckyItems.push(r.item);
+    });
+  }
+  store.set("stats", s);
+  renderLevels(true);
+  checkBadges();
+
+  // 満月かどうかは weather.js で計算するので、あとから調べる
+  if (!flags.hMoon) W().then(mod => {
+    if (!mod.moonEvent(mod.jstToday()).includes("満月")) return;
+    const s2 = store.get("stats", {});
+    (s2.flags = s2.flags || {}).hMoon = true;
+    store.set("stats", s2);
+    checkBadges();
+  }).catch(() => {});
+}
+
+// 連打の「ちょうど77回で止める」は、連打が終わったときに判定
+function onComboEnd(combo) {
+  if (combo !== 77) return;
+  const s = store.get("stats", {});
+  (s.flags = s.flags || {}).hCombo77 = true;
+  store.set("stats", s);
+  checkBadges();
+}
+
+// バッジをもらったことを友達にも知らせる（設定でオンのとき）
+function notifyBadges(list) {
+  if (!store.get("badgeNotify", false) || !getTargets().length) return;
+  const body = list.map(b => `${b.e} ${b.name}`).join("\n");
+  sendAll(getTargets(), () => ({ title: "🏅 バッジ獲得！", body, opts: { noLog: true } }));
+}
+
+// ---- バッジ獲得のお祝い・詳細のポップアップ ----
+const badgeQueue = [];
+let modalOpen = false;
+function showNextBadge() {
+  if (modalOpen || !badgeQueue.length) return;
+  const b = badgeQueue.shift();
+  confetti();
+  openModal("🏅 バッジ獲得！", b.e, `${b.tier ? b.tier + " " : ""}${b.name}`, b.desc, () => showNextBadge());
+}
+
+function openModal(kicker, e, name, desc, onClose) {
+  modalOpen = true;
+  const wrap = document.createElement("div");
+  wrap.className = "modal";
+  wrap.innerHTML = `<div class="modal-card"><div class="mk">${esc(kicker)}</div><div class="me">${e.startsWith("<") ? e : emo(e)}</div>
+    <div class="mn">${esc(name)}</div><div class="md">${desc}</div><button class="send" style="margin-top:0">OK</button></div>`;
+  const close = () => { wrap.remove(); modalOpen = false; onClose && onClose(); };
+  wrap.querySelector("button").onclick = close;
+  wrap.onclick = ev => { if (ev.target === wrap) close(); };
+  document.body.appendChild(wrap);
+}
+
+function confetti() {
+  const items = ["🎉", "✨", "🎊", "⭐", "💫", "🏅"];
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = rand(items);
+    s.style.left = Math.random() * 100 + "vw";
+    document.body.appendChild(s);
+    const drift = (Math.random() - 0.5) * 160;
+    s.animate([
+      { transform: "translate(0,0) rotate(0)", opacity: 1 },
+      { transform: `translate(${drift}px, ${innerHeight + 80}px) rotate(${(Math.random() - .5) * 720}deg)`, opacity: .9 },
+    ], { duration: 1800 + Math.random() * 1600, delay: Math.random() * 400, easing: "cubic-bezier(.3,.6,.6,1)" })
+      .onfinish = () => s.remove();
+  }
+}
+
+// ---- ログ画面のバッジ一覧 ----
+function renderBadges() {
+  const got = store.get("badges", {});
+  const c = badgeContext();
+  const n = BADGES.filter(b => got[b.id] !== undefined).length;
+  $("badgeCount").textContent = n;
+  $("badgeOf").textContent = `/ ${BADGES.length} 個`;
+  $("badgeBar").style.width = `${Math.round(n / BADGES.length * 100)}%`;
+  const openCats = new Set([...document.querySelectorAll("#badgeList details[open]")].map(d => d.dataset.cat));
+
+  $("badgeList").innerHTML = BADGE_CATS.map(cat => {
+    const list = BADGES.filter(b => b.cat === cat);
+    const have = list.filter(b => got[b.id] !== undefined).length;
+    const tiles = list.map(b => {
+      const has = got[b.id] !== undefined;
+      if (!has && b.hidden) {
+        return `<div class="btile off" data-id="${b.id}"><div class="be">❓</div><div class="bn">？？？</div><div class="bd">隠しバッジ</div></div>`;
+      }
+      const cur = Math.min(badgeProgress(b, c), badgeGoal(b));
+      const bottom = has
+        ? `<div class="bd">${got[b.id] ? new Date(got[b.id]).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" }) : "以前の記録から"}</div>`
+        : b.flag ? `<div class="bd">まだ</div>`
+        : `<div class="bp"><i style="width:${Math.round(cur / badgeGoal(b) * 100)}%"></i></div><div class="bd">${cur.toLocaleString()} / ${badgeGoal(b).toLocaleString()}</div>`;
+      return `<div class="btile ${has ? "got" : "off"}" data-id="${b.id}">${b.tier ? `<span class="tier">${b.tier}</span>` : ""}
+        <div class="be">${emo(b.e)}</div><div class="bn">${esc(b.name)}</div>${bottom}</div>`;
+    }).join("");
+    return `<details class="bcat" data-cat="${cat}" ${openCats.has(cat) ? "open" : ""}>
+      <summary>${cat}<small>${have} / ${list.length}</small></summary><div class="bgrid">${tiles}</div></details>`;
+  }).join("");
+
+  $("badgeList").querySelectorAll(".btile").forEach(el => el.onclick = () => {
+    const b = BADGES.find(x => x.id === el.dataset.id);
+    const has = got[b.id] !== undefined;
+    if (!has && b.hidden) return openModal("隠しバッジ", "❓", "？？？", "条件はひみつ。いろいろ試してみてね！");
+    const cur = Math.min(badgeProgress(b, c), badgeGoal(b));
+    const status = has ? "✅ もらったよ！" : b.flag ? "まだもらっていません" : `いま ${cur.toLocaleString()} / ${badgeGoal(b).toLocaleString()}`;
+    openModal(has ? "🏅 獲得済み" : "🔒 未獲得", b.e, b.name, `${esc(b.desc)}<br><b>${status}</b>`);
+  });
+}
+
+$("badgeNotify").checked = store.get("badgeNotify", false);
+$("badgeNotify").onchange = e => store.set("badgeNotify", e.target.checked);
+$("lvDecorate").checked = store.get("lvDecorate", true);
+$("lvDecorate").onchange = e => store.set("lvDecorate", e.target.checked);
+
+// はじめて開いたときは、これまでの記録でもらえるバッジを黙ってもらっておく
+if (store.get("badges", null) === null) {
+  store.set("badges", {});
+  const fresh = checkBadges(false);
+  if (fresh.length) setTimeout(() => toast(`これまでの記録で ${fresh.length} 個のバッジをもらいました 🏅`, true), 800);
+} else {
+  checkBadges();
+}
+renderLevels(false);
 
 let tt;
 function toast(text, ok) {
