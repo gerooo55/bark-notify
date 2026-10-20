@@ -200,8 +200,12 @@
   .hist .tt { font-weight: 700; }
   .hist .bd { white-space: pre-line; color: var(--text); }
   .hist .n { color: var(--accent); font-weight: 700; margin-left: 4px; }
-  .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
-  .anagram-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; align-items: stretch; }
+  /* ワンタップ通知 / いろいろ送る / アナグラム の間にさりげない区切り線 */
+  .extra-grid, .anagram-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .anagram-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: stretch; }
+  .anagram-row .weather-send { padding: 12px 0; }
+  .anagram-row .weather-send .emo { width: 30px; height: 30px; }
   .anagram-row input { border-radius: 18px; padding: 0 14px; }
   .anagram-row input.err { border-color: var(--ng); animation: shake .35s; }
   .weather-send { width: 100%; padding: 14px 8px; display: flex; align-items: center; justify-content: center;
@@ -309,7 +313,7 @@
             <li><b>🎲 チンチロ</b><br>サイコロ3つを振って、役が届きます。役が出なければ3回まで振り直し。2人以上に送ると、いちばん強い人をあなたの画面で発表します。<br>
               <small>強い順：👑 ピンゾロ（1・1・1）＞ 🎰 ゾロ目 ＞ 🎉 シゴロ（4・5・6）＞ 目（2つそろって残りの数。6が最強）＞ 💨 目なし ＞ 💀 ヒフミ（1・2・3）</small></li>
             <li><b>💬 ランダム</b><br>「💬 ランダム」タブで作った言葉の中から、ランダムに1つ届きます。</li>
-            <li><b>🔀 アナグラム</b><br>右の入力欄に言葉を入れて押すと、文字がバラバラに並びかわって届きます（例：青いベンチ → いチ青ベン）。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。</li>
+            <li><b>🔀 アナグラム</b><br>いちばん下の入力欄に言葉を入れて、左の 🔀 ボタンを押すと、文字がバラバラに並びかわって届きます（例：青いベンチ → いチ青ベン）。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。</li>
           </ul>
         </div>
       </details>
@@ -1169,8 +1173,14 @@ function shuffleChars(chars) {
   return a.join("");
 }
 
-$("anagramSend").innerHTML = `${emo(ANAGRAM_LOG)}アナグラム`;
-$("anagramText").addEventListener("input", () => $("anagramText").classList.remove("err"));
+$("anagramSend").innerHTML = emo(ANAGRAM_LOG);
+$("anagramSend").setAttribute("aria-label", "アナグラムを送る");
+// 入力した言葉は、ページを開き直しても残るように保存しておく
+$("anagramText").value = store.get("anagramText", "");
+$("anagramText").addEventListener("input", () => {
+  $("anagramText").classList.remove("err");
+  store.set("anagramText", $("anagramText").value);
+});
 $("anagramText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("anagramSend").click(); });
 $("anagramSend").onclick = async () => {
   const text = $("anagramText").value.trim();
@@ -1691,7 +1701,7 @@ function renderChart(log) {
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
 const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
-  "daily", "stats", "badges", "levels", "badgeNotify", "lvDecorate"];
+  "daily", "stats", "badges", "levels", "badgeNotify", "lvDecorate", "anagramText"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
