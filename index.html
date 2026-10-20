@@ -385,13 +385,13 @@
           <ul>
             <li>「📊 ログ」タブの <span class="tag">🏅 バッジ</span> で一覧が見られます</li>
             <li>バッジを押すと、もらえる条件と、あと何回かが分かります</li>
-            <li>もらった瞬間は紙吹雪でお祝いします 🎉</li>
+            <li>もらった瞬間は紙吹雪でお祝いします 🎉 選んでいる送る相手にも「🏅 バッジ獲得！」が届きます</li>
           </ul>
           <p><b>レベル</b>：絵文字ボタンは、送った回数で育ちます。</p>
           <ul>
             <li>Lv.2（50回）背景に色がつく → Lv.3（200回）ふちが光る → Lv.4（500回）キラキラ → Lv.5（1000回）王冠👑</li>
             <li>ボタンの左下にレベル、下の線が次のレベルまでのゲージです</li>
-            <li>レベルが上がると、相手に届く通知も 🐦✨ → ✨🐦✨ → 👑🐦👑 と豪華になります（ログ画面でオフにもできます）</li>
+            <li>レベルが上がると、相手に届く通知も 🐦✨ → ✨🐦✨ → 👑🐦👑 と豪華になります</li>
           </ul>
           <div class="tip-box">📅「◯日連続」のバッジは、この機能を入れた日から数えます。</div>
         </div>
@@ -536,21 +536,6 @@
       <div class="hero" id="logTotal">0<small>回</small></div>
     </div>
     <div class="card">
-      <h2>🏅 バッジ</h2>
-      <div class="bsum"><b id="badgeCount">0</b><span class="hint" id="badgeOf"></span></div>
-      <div class="bbar"><i id="badgeBar" style="width:0"></i></div>
-      <p class="hint" style="margin:4px 0 8px">バッジを押すと、もらえる条件が見られます。❓ は隠しバッジ（条件はひみつ）。</p>
-      <div id="badgeList"></div>
-      <label class="switch-row" style="margin-top:12px">
-        <span style="font-size:14px">バッジをもらったら、送る相手にも知らせる</span>
-        <input type="checkbox" id="badgeNotify" class="switch">
-      </label>
-      <label class="switch-row" style="margin-top:12px">
-        <span style="font-size:14px">ボタンのレベルが上がると、届く通知も豪華になる<br><small class="hint">Lv.3 🐦✨　Lv.4 ✨🐦✨　Lv.5 👑🐦👑</small></span>
-        <input type="checkbox" id="lvDecorate" class="switch">
-      </label>
-    </div>
-    <div class="card">
       <h2>絵文字ごとの累計</h2>
       <div class="tiles" id="logTiles"></div>
     </div>
@@ -570,6 +555,14 @@
         <tbody id="logTable"></tbody>
       </table>
       <p class="hint">年月を押すと、その月のグラフを表示します。</p>
+    </div>
+    <div class="card">
+      <h2>🏅 バッジ</h2>
+      <div class="bsum"><b id="badgeCount">0</b><span class="hint" id="badgeOf"></span></div>
+      <div class="bbar"><i id="badgeBar" style="width:0"></i></div>
+      <p class="hint" style="margin:4px 0 8px">バッジを押すと、もらえる条件が見られます。❓ は隠しバッジ（条件はひみつ）。<br>
+        バッジをもらうと、選んでいる送る相手にも「🏅 バッジ獲得！」が届きます。</p>
+      <div id="badgeList"></div>
     </div>
     <div class="card">
       <h2>📨 送った履歴</h2>
@@ -1710,7 +1703,7 @@ function renderChart(log) {
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
 const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
-  "daily", "stats", "badges", "levels", "badgeNotify", "lvDecorate", "anagramText"];
+  "daily", "stats", "badges", "levels", "anagramText"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1843,7 +1836,6 @@ function emojiTotals() {
 
 // レベルに合わせて届く通知のタイトルを豪華にする
 function decorate(e) {
-  if (!store.get("lvDecorate", true)) return e;
   const lv = levelOf(emojiTotals()[e] || 0);
   return lv >= 5 ? `👑${e}👑` : lv === 4 ? `✨${e}✨` : lv === 3 ? `${e}✨` : e;
 }
@@ -2130,7 +2122,7 @@ function onComboEnd(combo) {
 
 // バッジをもらったことを友達にも知らせる（設定でオンのとき）
 function notifyBadges(list) {
-  if (!store.get("badgeNotify", false) || !getTargets().length) return;
+  if (!getTargets().length) return;
   const body = list.map(b => `${b.e} ${b.name}`).join("\n");
   sendAll(getTargets(), () => ({ title: "🏅 バッジ獲得！", body, opts: { noLog: true } }));
 }
@@ -2214,10 +2206,6 @@ function renderBadges() {
   });
 }
 
-$("badgeNotify").checked = store.get("badgeNotify", false);
-$("badgeNotify").onchange = e => store.set("badgeNotify", e.target.checked);
-$("lvDecorate").checked = store.get("lvDecorate", true);
-$("lvDecorate").onchange = e => store.set("lvDecorate", e.target.checked);
 
 // はじめて開いたときは、これまでの記録でもらえるバッジを黙ってもらっておく
 if (store.get("badges", null) === null) {
