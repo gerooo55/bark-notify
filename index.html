@@ -63,9 +63,12 @@
   /* タブ */
   .tabs { display: flex; gap: 6px; background: var(--card); border: 1px solid var(--border);
           border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-  .tabs { gap: 2px; }
-  .tabs button { flex: 1; min-width: 0; padding: 9px 0; background: none; color: var(--sub); font-weight: 600;
-                 font-size: 12px; white-space: nowrap; letter-spacing: -0.02em; }
+  .tabs button { flex: 1; padding: 9px 2px; background: none; color: var(--sub); font-weight: 600; font-size: 14px; white-space: nowrap; }
+  .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 16px; }
+  .header h1 { margin: 0; }
+  .help-btn { flex: none; padding: 7px 12px; font-size: 13px; font-weight: 600; color: var(--sub);
+              background: var(--card); border: 1px solid var(--border); border-radius: 999px; }
+  .help-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   /* 使い方 */
   .help details { border-top: 1px solid var(--border); }
@@ -160,14 +163,16 @@
 </head>
 <body>
 <main>
-  <h1>🔔 Bark 通知ボタン</h1>
+  <div class="header">
+    <h1>🔔 Bark 通知ボタン</h1>
+    <button class="help-btn" data-page="pageHelp">📖 使い方</button>
+  </div>
 
   <div class="tabs">
     <button class="on" data-page="pageSend">送る</button>
     <button data-page="pageLog">📊 ログ</button>
     <button data-page="pageWeather">☀️ 天気</button>
     <button data-page="pageWords">💬 ワード</button>
-    <button data-page="pageHelp">📖 使い方</button>
   </div>
 
   <section id="pageHelp" class="help" hidden>
@@ -702,6 +707,7 @@ async function send(title, body, opts = {}) {
   const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
   // group を付けると iPhone 側で1つの束にまとめられるので、連打時は付けない
   const params = new URLSearchParams({ title });
+  if (opts.subtitle) params.set("subtitle", opts.subtitle);
   if (body) params.set("body", body);
   const icon = iconUrl();
   if (icon) params.set("icon", icon);
@@ -805,8 +811,9 @@ $("luckySend").innerHTML = `${emo(LUCKY_LOG)}ラッキーアイテム占いを�
 $("luckySend").onclick = () => {
   if (!friends[selected]) return toast("先に友達を追加してね", false);
   haptic();
-  const body = `${rand(LUCKY_ITEMS)}\n🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n運勢：${rand(LUCKY_LUCK)}`;
-  send("🔮 今日のラッキーアイテム", body, { logAs: LUCKY_LOG });
+  // 通知でパッと見えるのは「タイトル・サブタイトル・本文2行」なので、アイテムをサブタイトルにする
+  const body = `🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n${rand(LUCKY_LUCK)}`;
+  send("🔮 今日のラッキーアイテム", body, { subtitle: rand(LUCKY_ITEMS), logAs: LUCKY_LOG });
 };
 
 // ---- サイコロ ----
@@ -920,9 +927,12 @@ QUICK.forEach(q => {
 
 
 // ---- タブ ----
-document.querySelectorAll(".tabs button").forEach(t => {
+// 使い方はタイトル横のボタンから開く（タブと同じ切り替え方）
+const pageButtons = document.querySelectorAll(".tabs button, .help-btn");
+pageButtons.forEach(t => {
   t.onclick = () => {
-    document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === t));
+    pageButtons.forEach(x => x.classList.toggle("on", x === t));
+    window.scrollTo(0, 0);
     ["pageSend", "pageLog", "pageWeather", "pageWords", "pageHelp"].forEach(p => $(p).hidden = t.dataset.page !== p);
     if (t.dataset.page === "pageWords") renderWords();
     if (t.dataset.page === "pageLog") renderLog();
@@ -1138,7 +1148,7 @@ $("wPreview").onclick = async () => {
     const items = await buildWeatherMessages();
     $("wPreviewOut").innerHTML = items.map(({ r, msg }) => `
       <div class="pv"><img src="${msg.icon}" alt="">
-        <div><b>${msg.title.replace(/</g, "&lt;")}</b>${msg.body.replace(/</g, "&lt;")}<br><small style="color:var(--sub)">→ ${r.name}</small></div>
+        <div><b>${msg.title.replace(/</g, "&lt;")}</b><b style="font-weight:600;color:var(--text)">${msg.subtitle.replace(/</g, "&lt;")}</b>${msg.body.replace(/</g, "&lt;")}<br><small style="color:var(--sub)">→ ${r.name}</small></div>
       </div>`).join("");
   } catch (e) { toast(e.message, false); }
 };

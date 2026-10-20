@@ -170,17 +170,19 @@ export function buildMessage(settings, recipient, fc, iconBase) {
   const tempType = fc.max >= s.hot ? "hot" : fc.max <= s.cold ? "cold" : "mild";
   const fill = t => t.replaceAll("{name}", recipient.name).replaceAll("{max}", fc.max).replaceAll("{min}", fc.min);
 
-  const lines = [
-    `🌡 ${fc.max}℃ / ${fc.min}℃　☔ ${fc.rain}%`,
-    pick(s.comments[w.type]),
-    pick(s.comments[tempType]),
+  // iPhone の通知は「タイトル・サブタイトル・本文2行」までしかパッと見えないので、
+  // 数字はサブタイトルにまとめ、本文は1行目＝天気と気温のコメント、2行目＝気圧や小ネタ（なければ気温のコメント）にする
+  const normal = [pick(s.comments[w.type]), pick(s.comments[tempType])].filter(Boolean).map(fill);
+  const special = [
     fc.pressureDrop >= s.pressureDrop ? pick(s.comments.pressure) : "",
     ...(s.topics ? todayTopics() : []),
   ].filter(Boolean).map(fill);
+  const lines = special.length ? [normal.join(" "), special.join(" ")] : normal;
 
   return {
     title: `${w.emoji} ${recipient.place.name}は${w.label}`,
-    body: lines.join("\n"),
+    subtitle: `🌡 ${fc.max}℃ / ${fc.min}℃　☔ ${fc.rain}%`,
+    body: lines.filter(Boolean).join("\n"),
     icon: iconBase ? `${iconBase.replace(/\/?$/, "/")}icons/weather/${w.icon}.png` : "",
     isRainy: w.type === "rain" || w.type === "snow",
   };
@@ -188,6 +190,7 @@ export function buildMessage(settings, recipient, fc, iconBase) {
 
 export async function sendBark(key, msg, server = "https://api.day.app") {
   const params = new URLSearchParams({ title: msg.title, body: msg.body, group: "天気予報" });
+  if (msg.subtitle) params.set("subtitle", msg.subtitle);
   if (msg.icon) params.set("icon", msg.icon);
   const res = await fetch(`${server.replace(/\/+$/, "")}/${encodeURIComponent(key)}?${params}`);
   return res.ok;
