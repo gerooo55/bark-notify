@@ -277,7 +277,7 @@
             <li><b>送る時刻</b>と<b>送る日</b>（毎日 / 雨・雪の日だけ）を選ぶ</li>
             <li><b>送る相手</b>にチェック（地域を登録した友達だけ選べます）</li>
             <li><b>コメント</b>を好きに書きかえる（1行に1つ、ランダムで選ばれます）</li>
-            <li>いちばん上の <b>スイッチをオン</b> にする</li>
+            <li>「毎朝の天気通知」の <b>スイッチをオン</b> にする</li>
           </ul>
           <p>コメントや時刻を変えたら、<span class="tag">保存して GitHub に反映</span> を押してね。<span class="tag">今日の予報でプレビュー</span> で、どんな通知になるか確認できます。</p>
           <div class="tip-box">
@@ -366,31 +366,6 @@
 
   <section id="pageWeather" hidden>
     <div class="card">
-      <h2>毎朝の天気通知</h2>
-      <label class="switch-row">
-        <span>天気通知を送る</span>
-        <input type="checkbox" id="wEnabled" class="switch">
-      </label>
-      <p class="hint" id="wStatus"></p>
-      <div class="row">
-        <div>
-          <label>送る時刻（日本時間）</label>
-          <select id="wHour"></select>
-        </div>
-        <div>
-          <label>送る日</label>
-          <select id="wRainOnly">
-            <option value="false">毎日</option>
-            <option value="true">雨・雪の日だけ</option>
-          </select>
-        </div>
-      </div>
-      <label>送る相手（地域を登録した友達だけ選べます）</label>
-      <div id="wRecipients"></div>
-      <p class="hint">GitHub の仕組みで動くので、送られる時刻は数分〜30分ほどずれることがあります。</p>
-    </div>
-
-    <div class="card">
       <h2>コメント</h2>
       <p class="hint">1行に1つずつ書くと、その中からランダムに1つ選ばれます。<br>
         {name} は友達の名前、{max} は最高気温、{min} は最低気温に置き換わります。</p>
@@ -419,6 +394,32 @@
       <h2>プレビュー</h2>
       <button class="sub-btn" id="wPreview" style="width:100%">今日の予報でプレビュー</button>
       <div id="wPreviewOut"></div>
+    </div>
+
+    <div class="card">
+      <h2>毎朝の天気通知</h2>
+      <label class="switch-row">
+        <span>天気通知を送る</span>
+        <input type="checkbox" id="wEnabled" class="switch">
+      </label>
+      <p class="hint" id="wStatus"></p>
+      <div class="row">
+        <div>
+          <label>送る時刻（日本時間）</label>
+          <select id="wHour"></select>
+        </div>
+        <div>
+          <label>送る日</label>
+          <select id="wRainOnly">
+            <option value="false">毎日</option>
+            <option value="true">雨・雪の日だけ</option>
+          </select>
+        </div>
+      </div>
+      <label>送る相手（地域を登録した友達だけ選べます）</label>
+      <div id="wRecipients"></div>
+      <p class="hint">GitHub の仕組みで動くので、送られる時刻は数分〜30分ほどずれることがあります。<br>
+        コメントや時刻を変えたら、下のボタンで GitHub に反映してね（毎朝の自動送信にだけ使われます）。</p>
       <button class="send" id="wSave">保存して GitHub に反映</button>
     </div>
 
