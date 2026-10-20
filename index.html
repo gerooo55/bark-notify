@@ -1192,7 +1192,7 @@ $("anagramSend").onclick = async () => {
   const r = await sendAll(list, f => {
     const s = shuffled.get(f.key);
     return isMatch(s)
-      ? { title: "🎉 アナグラム大成功！", body: `🎊 ${s} 🎊\nバラバラにしたのに元どおり！奇跡！`, opts: { subtitle: "ぴったり揃った ✨", logAs: ANAGRAM_LOG } }
+      ? { title: "🎉 アナグラム大成功！", body: `🎊 ${s} 🎊`, opts: { logAs: ANAGRAM_LOG } }
       : { title: "🔀 アナグラム", body: s, opts: { logAs: ANAGRAM_LOG } };
   });
   showSent(r.items);
