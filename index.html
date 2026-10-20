@@ -63,7 +63,29 @@
   /* タブ */
   .tabs { display: flex; gap: 6px; background: var(--card); border: 1px solid var(--border);
           border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-  .tabs button { flex: 1; padding: 9px; background: none; color: var(--sub); font-weight: 600; }
+  .tabs { gap: 2px; }
+  .tabs button { flex: 1; min-width: 0; padding: 9px 0; background: none; color: var(--sub); font-weight: 600;
+                 font-size: 12px; white-space: nowrap; letter-spacing: -0.02em; }
+
+  /* 使い方 */
+  .help details { border-top: 1px solid var(--border); }
+  .help details:first-of-type { border-top: none; }
+  .help summary { list-style: none; padding: 14px 0; font-size: 16px; font-weight: 700; color: var(--text);
+                  display: flex; align-items: center; gap: 8px; }
+  .help summary::-webkit-details-marker { display: none; }
+  .help summary::after { content: "＋"; margin-left: auto; color: var(--sub); font-weight: 400; }
+  .help details[open] summary::after { content: "－"; }
+  .help .body { padding: 0 0 16px; font-size: 15px; line-height: 1.75; }
+  .help ol, .help ul { margin: 6px 0; padding-left: 1.4em; }
+  .help li { margin: 4px 0; }
+  .help p { margin: 6px 0; }
+  .help .tip-box { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin: 10px 0 0; font-size: 14px; }
+  .help b { color: var(--accent); }
+  .help .tag { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+               padding: 0 6px; font-size: 13px; white-space: nowrap; }
+  .word-card input { font-weight: 600; }
+  .word-card textarea { margin-top: 8px; min-height: 90px; }
+  .word-card .del { background: none; padding: 6px 0 0; font-size: 13px; }
   .tabs button.on { background: var(--accent); color: #fff; }
 
   /* ログ */
@@ -103,6 +125,13 @@
                  width: 34px; height: 34px; }
   .year span { font-weight: 700; min-width: 70px; text-align: center; }
 
+  .weather-send { width: 100%; margin-top: 12px; padding: 12px; display: flex; align-items: center; justify-content: center;
+                  gap: 8px; font-size: 16px; font-weight: 600; background: var(--bg); color: var(--text);
+                  border: 1px solid var(--border); border-radius: 18px; transition: transform .08s; }
+  .weather-send:active { transform: scale(.97); }
+  .weather-send:disabled { opacity: .5; }
+  .weather-send .emo { width: 28px; height: 28px; vertical-align: middle; }
+
   /* 天気 */
   .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
                 font-size: 16px; color: var(--text); margin: 0; }
@@ -137,7 +166,181 @@
     <button class="on" data-page="pageSend">送る</button>
     <button data-page="pageLog">📊 ログ</button>
     <button data-page="pageWeather">☀️ 天気</button>
+    <button data-page="pageWords">💬 ワード</button>
+    <button data-page="pageHelp">📖 使い方</button>
   </div>
+
+  <section id="pageHelp" class="help" hidden>
+    <div class="card">
+      <h2>📖 使い方</h2>
+      <p class="hint" style="margin:0">見たいところを押すと開きます。はじめての人は「① はじめての準備」から読んでね。</p>
+    </div>
+
+    <div class="card">
+      <details open>
+        <summary>🌱 ① はじめての準備</summary>
+        <div class="body">
+          <p>通知を送り合うには、<b>おたがいのiPhoneに「Bark」アプリ</b>が必要です。</p>
+          <ol>
+            <li>App Store で <span class="tag">Bark</span> をインストールして開く</li>
+            <li>通知の許可を聞かれたら <span class="tag">許可</span> を押す</li>
+            <li>アプリに出てくる <span class="tag">https://api.day.app/〇〇〇/...</span> というURLをコピーして、<b>友達に送る</b></li>
+            <li>友達からも、同じように友達のURLをもらう</li>
+          </ol>
+          <div class="tip-box">🔑 このURLは「あなたに通知を送るための合言葉」です。仲のいい友達にだけ教えてね。</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>👫 ② 友達を登録する</summary>
+        <div class="body">
+          <ol>
+            <li>「送る」画面のいちばん下、<span class="tag">⚙️ 設定</span> を押して開く</li>
+            <li><b>友達の名前</b>を入れる（あだ名でOK）</li>
+            <li><b>Bark キー</b>の欄に、友達からもらったURLを<b>そのまま貼り付け</b></li>
+            <li>天気予報も送りたいときは、<b>住んでいる地域</b>に「渋谷」「大阪市」などを入れて <span class="tag">検索</span> → 候補から選ぶ</li>
+            <li><span class="tag">友達を追加</span> を押したら完了！</li>
+          </ol>
+          <p>あとから直したいときは、「送る相手」で友達を選んでから <span class="tag">選択中の友達を編集</span> を押してね。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>📲 ③ 通知を送る</summary>
+        <div class="body">
+          <ol>
+            <li>「送る相手」で、送りたい友達を<b>タップして選ぶ</b>（オレンジ色になったらOK）</li>
+            <li>上の<b>絵文字ボタンを押す</b>だけ！</li>
+          </ol>
+          <p>押した回数だけ通知が届くので、<b>連打もOK</b>。ボタンの右上に「×3」のように回数が出ます。</p>
+          <p>絵文字ごとに通知の音がちがうので、いろいろ押して聞きくらべてみてね。</p>
+          <div class="tip-box">💡 相手には、通知のタイトルに絵文字だけが届きます。誰から来たかは、事前に「この絵文字は私」と決めておくと楽しいよ。</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>🎁 ④ いろいろ送るボタン</summary>
+        <div class="body">
+          <ul>
+            <li><b>🌤 天気予報を送る</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
+            <li><b>🔮 ラッキーアイテム占いを送る</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
+            <li><b>🎲 サイコロを送る</b><br>1〜6のどれかが届きます。出た目はあなたの画面にも出るので、勝負にも使えるよ。</li>
+            <li><b>💬 ランダムワードを送る</b><br>「💬 ワード」タブで作った言葉の中から、ランダムに1つ届きます。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>💬 ⑤ ランダムワードを作る</summary>
+        <div class="body">
+          <ol>
+            <li>上の <span class="tag">💬 ワード</span> タブを開く</li>
+            <li><b>タイトル</b>に通知の見出し（例：💪 がんばれ）を書く</li>
+            <li><b>本文</b>に、届けたい言葉を<b>1行に1つずつ</b>書く</li>
+            <li>もっと増やしたいときは <span class="tag">＋ タイトルを追加</span></li>
+          </ol>
+          <p>送るときは「タイトルを1つ → そのタイトルの本文を1行」ランダムで選びます。書いた内容は自動で保存されるので、保存ボタンはありません。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>☀️ ⑥ 毎朝の天気予報</summary>
+        <div class="body">
+          <p>毎朝決まった時間に、友達へ天気予報を<b>自動で</b>届けられます。</p>
+          <p><b>はじめに1回だけ</b>、GitHub との連携が必要です（作った人がやればOK）。</p>
+          <ol>
+            <li>「☀️ 天気」タブのいちばん下 <span class="tag">🔑 GitHub 連携の設定</span> にアクセストークンを貼る</li>
+            <li><span class="tag">接続して GitHub の設定を読み込む</span> を押す</li>
+          </ol>
+          <p>あとは「☀️ 天気」タブで</p>
+          <ul>
+            <li><b>送る時刻</b>と<b>送る日</b>（毎日 / 雨・雪の日だけ）を選ぶ</li>
+            <li><b>送る相手</b>にチェック（地域を登録した友達だけ選べます）</li>
+            <li><b>コメント</b>を好きに書きかえる（1行に1つ、ランダムで選ばれます）</li>
+            <li>いちばん上の <b>スイッチをオン</b> にする</li>
+          </ul>
+          <p>コメントや時刻を変えたら、<span class="tag">保存して GitHub に反映</span> を押してね。<span class="tag">今日の予報でプレビュー</span> で、どんな通知になるか確認できます。</p>
+          <div class="tip-box">
+            🌕 「今日の小ネタ」をオンにすると、満月や七夕などの日にひとこと付きます。<br>
+            ✏️ コメントに <span class="tag">{name}</span> と書くと友達の名前、<span class="tag">{max}</span> <span class="tag">{min}</span> は最高・最低気温に変わります。<br>
+            ⏰ 届く時間は、設定より数分〜30分くらい遅れることがあります。
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>📊 ⑦ ログを見る</summary>
+        <div class="body">
+          <p>「📊 ログ」タブで、これまでに送った回数が見られます。</p>
+          <ul>
+            <li><b>合計</b>と、<b>絵文字ごとの回数</b></li>
+            <li><b>月ごとのグラフ</b>（‹ › で年を切りかえ、棒を押すと内訳）</li>
+            <li><b>年月ごとの一覧</b>（年月を押すとグラフにジャンプ）</li>
+          </ul>
+          <p>回数は、送るのに成功したぶんだけ数えます。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>💾 ⑧ バックアップ</summary>
+        <div class="body">
+          <p>友達やログは<b>このiPhoneの中だけ</b>に保存されています。Safariのデータを消すと消えてしまうので、ときどきバックアップしてね。</p>
+          <ol>
+            <li>「📊 ログ」タブのいちばん下 <span class="tag">書き出し（ファイルに保存）</span> を押す</li>
+            <li>出てきたメニューで <span class="tag">"ファイル"に保存</span> → <b>iCloud Drive</b> を選んで保存</li>
+          </ol>
+          <p>戻すときは <span class="tag">読み込み（上書き）</span> を押して、保存したファイルを選びます。<br>
+            <span class="tag">読み込み（合算）</span> は、今のログに回数を足したいとき用です。</p>
+          <div class="tip-box">🔔 1週間バックアップしていないと、「送る」画面の上にお知らせが出ます。</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>🏠 ⑨ ホーム画面に置く（おすすめ）</summary>
+        <div class="body">
+          <ol>
+            <li>Safari でこのページを開く</li>
+            <li>画面下の <span class="tag">共有ボタン（□に↑）</span> を押す</li>
+            <li><span class="tag">ホーム画面に追加</span> を選ぶ</li>
+          </ol>
+          <p>アプリみたいにすぐ開けるようになります。しかも、ホーム画面から使うと<b>データが自動で消えにくく</b>なります。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>❓ ⑩ 困ったときは</summary>
+        <div class="body">
+          <p><b>通知が届かない</b></p>
+          <ul>
+            <li>友達の Bark キー（URL）が正しいか、編集画面で確認してね</li>
+            <li>相手の iPhone の「設定 → 通知 → Bark」で、通知がオンになっているか確認してね</li>
+            <li>おやすみモード・集中モード中は、通知が鳴らないことがあります</li>
+          </ul>
+          <p><b>「送信失敗」と出る</b></p>
+          <ul><li>キーが間違っているか、ネットにつながっていないかも。もう一度試してみてね</li></ul>
+          <p><b>天気予報が「地域が未登録」と出る</b></p>
+          <ul><li>⚙️ 設定で友達を編集して、「住んでいる地域」を検索して選んでね</li></ul>
+          <p><b>毎朝の天気予報が届かない</b></p>
+          <ul>
+            <li>「☀️ 天気」タブのスイッチがオンになっているか確認してね</li>
+            <li>その下に ❌ のメッセージが出ていたら、GitHub のトークンの期限切れかも。作り直して貼り直してね</li>
+          </ul>
+          <p><b>友達やログが消えた</b></p>
+          <ul><li>バックアップがあれば「📊 ログ」タブの <span class="tag">読み込み（上書き）</span> で戻せます</li></ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="pageWords" hidden>
+    <div class="card">
+      <h2>ランダムワード</h2>
+      <p class="hint">「ランダムワードを送る」を押すと、下のタイトルから1つ、そのタイトルの本文から1行がランダムに選ばれて届きます。<br>
+        本文は1行に1つずつ書いてね。入力した内容は自動で保存されます。</p>
+    </div>
+    <div id="wordGroups"></div>
+    <button class="send" id="wordAdd" style="margin-top:0">＋ タイトルを追加</button>
+  </section>
 
   <section id="pageWeather" hidden>
     <div class="card">
@@ -184,20 +387,17 @@
           <input id="wDrop" type="number" inputmode="decimal" step="0.5">
         </div>
       </div>
+      <label class="switch-row" style="margin-top:16px">
+        <span>今日の小ネタを付ける<br><small class="hint">🌕 満月・🌑 新月などの月の満ち欠けや、🎋 七夕・🎃 ハロウィンなどの行事</small></span>
+        <input type="checkbox" id="wTopics" class="switch">
+      </label>
     </div>
 
     <div class="card">
-      <h2>プレビュー・テスト</h2>
-      <div class="row">
-        <button class="sub-btn" id="wPreview">プレビュー</button>
-        <button class="sub-btn" id="wTest">今すぐテスト送信</button>
-      </div>
+      <h2>プレビュー</h2>
+      <button class="sub-btn" id="wPreview" style="width:100%">今日の予報でプレビュー</button>
       <div id="wPreviewOut"></div>
       <button class="send" id="wSave">保存して GitHub に反映</button>
-      <label class="switch-row" style="margin-top:14px">
-        <span>ワンタップ通知に相手の天気を添える</span>
-        <input type="checkbox" id="wAttach" class="switch">
-      </label>
     </div>
 
     <div class="card">
@@ -265,51 +465,23 @@
     </div>
   </div>
   <div class="card">
-    <h2>送る相手</h2>
-    <div class="friends" id="friends"></div>
-    <p class="hint" id="noFriend">まだ友達がいません。下の「友達を追加」から登録してね。</p>
-  </div>
-
-  <div class="card">
     <h2>ワンタップ通知</h2>
     <div class="quick" id="quick"></div>
+    <button class="weather-send" id="weatherSend"></button>
+    <button class="weather-send" id="luckySend"></button>
+    <button class="weather-send" id="diceSend"></button>
+    <button class="weather-send" id="wordSend"></button>
   </div>
 
   <div class="card">
-    <h2>自由メッセージ</h2>
-    <input id="msg" placeholder="メッセージを入力" maxlength="200">
-    <div class="row">
-      <div>
-        <label>音</label>
-        <select id="sound">
-          <option value="">デフォルト</option>
-          <option value="alarm">alarm</option>
-          <option value="bell">bell</option>
-          <option value="birdsong">birdsong</option>
-          <option value="calypso">calypso</option>
-          <option value="glass">glass</option>
-          <option value="minuet">minuet</option>
-          <option value="shake">shake</option>
-        </select>
-      </div>
-      <div>
-        <label>重要度</label>
-        <select id="level">
-          <option value="active">通常</option>
-          <option value="timeSensitive">至急（集中モード貫通）</option>
-          <option value="passive">静か</option>
-        </select>
-      </div>
-    </div>
-    <button class="send" id="sendBtn">送信</button>
+    <h2>送る相手</h2>
+    <div class="friends" id="friends"></div>
+    <p class="hint" id="noFriend">まだ友達がいません。下の「⚙️ 設定」から登録してね。</p>
   </div>
 
   <div class="card">
     <details>
-      <summary>⚙️ 設定（自分の名前・友達の追加と編集）</summary>
-      <label>自分の名前（自由メッセージのタイトルに出ます）</label>
-      <input id="myName" placeholder="例: たろう">
-
+      <summary>⚙️ 設定（友達の追加と編集）</summary>
       <p class="hint" id="editNote" hidden style="margin:12px 0 0;color:var(--accent);font-weight:600"></p>
       <label>友達の名前</label>
       <input id="fName" placeholder="例: はなこ">
@@ -362,6 +534,10 @@ const EMOJI_IMG = {
   "🤖": "Robot/Color/robot_color.svg",
   "🎺": "Trumpet/Color/trumpet_color.svg",
   "✏️": "Pencil/Color/pencil_color.svg",
+  "🌤": "Sun%20behind%20small%20cloud/Color/sun_behind_small_cloud_color.svg",
+  "🔮": "Crystal%20ball/Color/crystal_ball_color.svg",
+  "🎲": "Game%20die/Color/game_die_color.svg",
+  "💬": "Speech%20balloon/Color/speech_balloon_color.svg",
 };
 // 画像がある絵文字は <img>、ない絵文字（昔のログなど）はそのまま文字で
 const emo = (e, cls = "emo") => EMOJI_IMG[e]
@@ -377,9 +553,7 @@ let friends = store.get("friends", []);
 let selected = store.get("selected", 0);
 const $ = id => document.getElementById(id);
 
-$("myName").value = store.get("myName", "");
 $("server").value = store.get("server", "");
-$("myName").oninput = e => store.set("myName", e.target.value.trim());
 $("server").oninput = e => store.set("server", e.target.value.trim());
 
 function renderFriends() {
@@ -510,7 +684,7 @@ function seasonIcon(d = new Date()) {
 const iconUrl = () => here(`icons/${seasonIcon().icon}.png`);
 
 // ログは「年月 → 絵文字 → 回数」で集計して保存（件数が増えても容量を食わない）
-const FREE = "✏️";
+const FREE = "✏️"; // 以前あった自由メッセージ（昔のログ表示用）
 function addLog(emoji) {
   const d = new Date();
   const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -588,22 +762,126 @@ function burst(btn, emoji) {
   }
 }
 
-// ワンタップ通知に添える相手の地域の今の天気（例: 🌤 22℃ 渋谷）。連打用に10分キャッシュ
-const nowCache = {};
-async function tapWeather(f) {
-  if (!f?.place || store.get("weather", {}).attachOnTap === false) return "";
-  const k = `${f.place.lat},${f.place.lon}`;
-  if (!nowCache[k] || Date.now() - nowCache[k].t > 10 * 60 * 1000) {
-    nowCache[k] = { t: Date.now(), p: W().then(m => m.fetchCurrent(f.place.lat, f.place.lon)) };
-  }
+// 選んでいる友達に、今日の天気予報をすぐ送る（中身は毎朝の天気通知と同じ）
+const WEATHER_LOG = "🌤";
+$("weatherSend").innerHTML = `${emo(WEATHER_LOG)}天気予報を送る`;
+$("weatherSend").onclick = async () => {
+  const f = friends[selected];
+  if (!f) return toast("先に友達を追加してね", false);
+  if (!f.place) return toast(`${f.name} の地域が未登録です（⚙️設定の編集から登録してね）`, false);
+  const b = $("weatherSend");
+  haptic();
+  b.disabled = true;
   try {
-    const c = await nowCache[k].p;
-    return `${c.emoji} ${c.temp}℃ ${f.place.name}`;
+    const m = await W();
+    const fc = await m.fetchForecast(f.place.lat, f.place.lon);
+    const msg = m.buildMessage(await weatherSettings(), f, fc, here(""));
+    if (!(await m.sendBark(f.key, msg, store.get("server", "") || undefined))) throw new Error();
+    addLog(WEATHER_LOG);
+    toast(`${f.name} に天気予報を送りました ✓`, true);
   } catch {
-    delete nowCache[k];
-    return "";
+    toast("天気予報の送信に失敗しました", false);
+  } finally {
+    b.disabled = false;
   }
+};
+
+const rand = list => list[Math.floor(Math.random() * list.length)];
+
+// ---- ラッキーアイテム占い ----
+const LUCKY_LOG = "🔮";
+const LUCKY_ITEMS = [
+  "🍙 おにぎり", "☕ コーヒー", "🍫 チョコレート", "🧸 ぬいぐるみ", "🎧 イヤホン", "📚 文庫本", "🌂 折りたたみ傘",
+  "🧦 くつした", "🍓 いちご", "🪴 観葉植物", "🕯 キャンドル", "🧴 ハンドクリーム", "🍩 ドーナツ", "🎀 リボン",
+  "🖊 ボールペン", "🧣 マフラー", "🍵 緑茶", "🍪 クッキー", "📷 カメラ", "🧃 ジュース", "🔑 キーホルダー",
+  "🍜 ラーメン", "🌻 ひまわり", "🧁 カップケーキ", "🎮 ゲーム", "👟 スニーカー", "🍋 レモン", "🪞 手鏡",
+  "🧩 パズル", "🍮 プリン", "🎈 風船", "🐱 ねこ", "🍞 パン", "🥤 炭酸水", "💍 指輪", "🧢 キャップ",
+];
+const LUCKY_COLORS = ["あか", "オレンジ", "きいろ", "ミントグリーン", "みずいろ", "ネイビー", "むらさき", "ピンク",
+  "しろ", "くろ", "ベージュ", "ゴールド", "シルバー", "ラベンダー", "ブラウン"];
+const LUCKY_LUCK = ["★★★★★ 最高の一日！", "★★★★☆ いい感じ！", "★★★☆☆ まずまず", "★★☆☆☆ のんびりいこう",
+  "★☆☆☆☆ 無理せずにね"];
+$("luckySend").innerHTML = `${emo(LUCKY_LOG)}ラッキーアイテム占いを送る`;
+$("luckySend").onclick = () => {
+  if (!friends[selected]) return toast("先に友達を追加してね", false);
+  haptic();
+  const body = `${rand(LUCKY_ITEMS)}\n🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n運勢：${rand(LUCKY_LUCK)}`;
+  send("🔮 今日のラッキーアイテム", body, { logAs: LUCKY_LOG });
+};
+
+// ---- サイコロ ----
+const DICE_LOG = "🎲";
+const DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+$("diceSend").innerHTML = `${emo(DICE_LOG)}サイコロを送る`;
+$("diceSend").onclick = async () => {
+  const f = friends[selected];
+  if (!f) return toast("先に友達を追加してね", false);
+  haptic();
+  const n = 1 + Math.floor(Math.random() * 6);
+  burst($("diceSend"), DICE_LOG);
+  if (await send("🎲 サイコロ", `${DICE_FACES[n - 1]} ${n} が出たよ！`, { logAs: DICE_LOG, quiet: true })) {
+    toast(`🎲 ${n} を ${f.name} に送りました ✓`, true);
+  }
+};
+
+// ---- ランダムワード ----
+const WORD_LOG = "💬";
+const DEFAULT_WORDS = [
+  { title: "💪 がんばれ", bodies: ["今日もえらい！", "無理しすぎないでね", "応援してるよ〜"] },
+  { title: "🍽 今日のごはん", bodies: ["カレー", "オムライス", "おすし", "パスタ", "からあげ"] },
+];
+const getWords = () => store.get("words", DEFAULT_WORDS);
+$("wordSend").innerHTML = `${emo(WORD_LOG)}ランダムワードを送る`;
+$("wordSend").onclick = () => {
+  if (!friends[selected]) return toast("先に友達を追加してね", false);
+  const groups = getWords().filter(g => g.bodies.length);
+  if (!groups.length) return toast("「💬 ワード」タブで本文を登録してね", false);
+  haptic();
+  const g = rand(groups);
+  send(g.title || "💬", rand(g.bodies), { logAs: WORD_LOG });
+};
+
+// ワード設定画面。入力するたびに自動保存
+function renderWords() {
+  const box = $("wordGroups");
+  box.innerHTML = "";
+  getWords().forEach((g, i) => {
+    const card = document.createElement("div");
+    card.className = "card word-card";
+    card.innerHTML = `
+      <label style="margin-top:0">タイトル</label>
+      <input class="wt" maxlength="60" placeholder="例: 💪 がんばれ">
+      <label>本文（1行に1つ）</label>
+      <textarea class="wb" rows="4" placeholder="今日もえらい！&#10;応援してるよ〜"></textarea>
+      <button class="del">このタイトルを削除</button>`;
+    card.querySelector(".wt").value = g.title;
+    card.querySelector(".wb").value = g.bodies.join("\n");
+    card.querySelector(".del").onclick = () => {
+      if (!confirm(`「${g.title || "（タイトルなし）"}」を削除しますか？`)) return;
+      const words = getWords();
+      words.splice(i, 1);
+      store.set("words", words);
+      renderWords();
+    };
+    box.appendChild(card);
+  });
 }
+function saveWords() {
+  const words = [...document.querySelectorAll("#wordGroups .word-card")].map(c => ({
+    title: c.querySelector(".wt").value.trim(),
+    bodies: c.querySelector(".wb").value.split("\n").map(x => x.trim()).filter(Boolean),
+  }));
+  store.set("words", words);
+}
+$("wordGroups").addEventListener("input", saveWords);
+$("wordAdd").onclick = () => {
+  const words = getWords();
+  words.push({ title: "", bodies: [] });
+  store.set("words", words);
+  renderWords();
+  const cards = document.querySelectorAll("#wordGroups .word-card");
+  cards[cards.length - 1].querySelector(".wt").focus();
+};
 
 QUICK.forEach(q => {
   const b = document.createElement("button");
@@ -632,9 +910,7 @@ QUICK.forEach(q => {
     clearTimeout(comboTimer);
     comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    tapWeather(friends[selected])
-      .then(body => send(q.emoji, body, { sound: q.sound, level: q.level, quiet: true }))
-      .then(ok => {
+    send(q.emoji, "", { sound: q.sound, level: q.level, quiet: true }).then(ok => {
       done++; if (ok) sent++;
       report();
     });
@@ -642,20 +918,13 @@ QUICK.forEach(q => {
   $("quick").appendChild(b);
 });
 
-$("sendBtn").onclick = () => {
-  const body = $("msg").value.trim();
-  if (!body) return toast("メッセージを入力してね", false);
-  const me = store.get("myName", "") || "だれか";
-  send(me + " から", body, { sound: $("sound").value, level: $("level").value, logAs: FREE });
-  $("msg").value = "";
-};
-$("msg").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("sendBtn").click(); });
 
 // ---- タブ ----
 document.querySelectorAll(".tabs button").forEach(t => {
   t.onclick = () => {
     document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === t));
-    ["pageSend", "pageLog", "pageWeather"].forEach(p => $(p).hidden = t.dataset.page !== p);
+    ["pageSend", "pageLog", "pageWeather", "pageWords", "pageHelp"].forEach(p => $(p).hidden = t.dataset.page !== p);
+    if (t.dataset.page === "pageWords") renderWords();
     if (t.dataset.page === "pageLog") renderLog();
     if (t.dataset.page === "pageWeather") renderWeather();
   };
@@ -670,7 +939,7 @@ for (let h = 0; h < 24; h++) $("wHour").insertAdjacentHTML("beforeend", `<option
 async function weatherSettings() {
   const { DEFAULT_WEATHER_SETTINGS: D } = await W();
   const s = store.get("weather", {});
-  return { ...D, attachOnTap: true, recipients: [], ...s, comments: { ...D.comments, ...(s.comments || {}) } };
+  return { ...D, recipients: [], ...s, comments: { ...D.comments, ...(s.comments || {}) } };
 }
 
 async function renderWeather() {
@@ -682,7 +951,7 @@ async function renderWeather() {
   $("wHot").value = s.hot;
   $("wCold").value = s.cold;
   $("wDrop").value = s.pressureDrop;
-  $("wAttach").checked = s.attachOnTap;
+  $("wTopics").checked = s.topics;
 
   $("wRecipients").innerHTML = friends.length ? friends.map((f, i) => `
     <label class="check">
@@ -716,7 +985,7 @@ async function readWeatherForm() {
     hot: num("wHot", s.hot),
     cold: num("wCold", s.cold),
     pressureDrop: num("wDrop", s.pressureDrop),
-    attachOnTap: $("wAttach").checked,
+    topics: $("wTopics").checked,
     recipients: [...document.querySelectorAll("#wRecipients input:checked")].map(i => i.dataset.key),
     comments,
   };
@@ -771,7 +1040,7 @@ async function saveWeatherToGitHub() {
   const s = await readWeatherForm();
   const config = {
     enabled: s.enabled, hour: s.hour, rainOnly: s.rainOnly,
-    hot: s.hot, cold: s.cold, pressureDrop: s.pressureDrop, comments: s.comments,
+    hot: s.hot, cold: s.cold, pressureDrop: s.pressureDrop, topics: s.topics, comments: s.comments,
     server: store.get("server", "") || undefined,
     recipients: weatherRecipients(s),
   };
@@ -812,7 +1081,13 @@ $("wEnabled").onchange = async () => {
   await readWeatherForm();
   renderWeatherStatus("❌ " + err);
 };
-$("wAttach").onchange = () => { readWeatherForm(); };
+// 天気の設定は入力するたびにこの端末へ自動保存（バックアップにも入る）。GitHub への反映は「保存」ボタンで
+let wAutoSave;
+["input", "change"].forEach(ev => $("pageWeather").addEventListener(ev, e => {
+  if (e.target.closest("#ghDetails") || e.target.id === "wEnabled") return;
+  clearTimeout(wAutoSave);
+  wAutoSave = setTimeout(readWeatherForm, 300);
+}));
 
 $("ghRepo").onchange = e => store.set("ghRepo", e.target.value.trim().replace(/^https:\/\/github\.com\//, "").replace(/\/$/, ""));
 $("ghToken").onchange = e => store.set("ghToken", e.target.value.trim());
@@ -868,25 +1143,15 @@ $("wPreview").onclick = async () => {
   } catch (e) { toast(e.message, false); }
 };
 
-$("wTest").onclick = async () => {
-  try {
-    const items = await buildWeatherMessages();
-    if (!confirm(`${items.map(i => i.r.name).join("、")} に今すぐ天気予報を送ります。いい？`)) return;
-    const m = await W();
-    const server = store.get("server", "") || undefined;
-    const ok = (await Promise.all(items.map(i => m.sendBark(i.r.key, i.msg, server)))).filter(Boolean).length;
-    toast(`${items.length}人中 ${ok}人に送信しました`, ok === items.length);
-  } catch (e) { toast(e.message, false); }
-};
-
 // ---- ログ画面 ----
-// 今のボタンの絵文字 → 以前使っていた絵文字（ログに残っている分）→ 自由メッセージ の順
+// 今のボタンの絵文字 → 天気予報 → 以前使っていた絵文字・自由メッセージ（ログに残っている分だけ）の順
 let ORDER = [];
 function updateOrder(log) {
   const old = new Set();
   Object.values(log).forEach(o => Object.keys(o).forEach(e => old.add(e)));
   const cur = QUICK.map(q => q.emoji);
-  ORDER = [...cur, ...[...old].filter(e => !cur.includes(e) && e !== FREE), FREE];
+  const extra = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, WORD_LOG];
+  ORDER = [...cur, ...extra, ...[...old].filter(e => !cur.includes(e) && !extra.includes(e) && e !== FREE), ...(old.has(FREE) ? [FREE] : [])];
 }
 let viewYear = new Date().getFullYear();
 $("yPrev").onclick = () => { viewYear--; renderLog(); };
@@ -990,7 +1255,7 @@ function renderChart(log) {
 
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
-const BACKUP_KEYS = ["log", "friends", "selected", "myName", "server", "weather", "ghRepo"];
+const BACKUP_KEYS = ["log", "friends", "selected", "server", "weather", "ghRepo", "words"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1040,7 +1305,7 @@ $("importFile").onchange = async e => {
     if (!confirm(`${String(backup.exportedAt || "").slice(0, 10)} のバックアップに戻します。今のデータは上書きされます。よろしい？`)) return;
     BACKUP_KEYS.forEach(k => { if (k in d) store.set(k, d[k]); });
   } else {
-    // ログは回数を足し、友達はキーが重複しないものだけ追加
+    // ログは回数を足し、友達はキーが重複しないものだけ追加（天気の設定は今のまま）
     const log = store.get("log", {});
     Object.entries(d.log || {}).forEach(([m, o]) => {
       log[m] = log[m] || {};
@@ -1050,11 +1315,14 @@ $("importFile").onchange = async e => {
     const fr = store.get("friends", []);
     (d.friends || []).forEach(f => { if (!fr.some(x => x.key === f.key)) fr.push(f); });
     store.set("friends", fr);
+    // ランダムワードは、同じタイトルがなければ追加
+    const words = getWords();
+    (d.words || []).forEach(g => { if (!words.some(w => w.title === g.title)) words.push(g); });
+    store.set("words", words);
   }
 
   friends = store.get("friends", []);
   selected = Math.min(store.get("selected", 0), Math.max(friends.length - 1, 0));
-  $("myName").value = store.get("myName", "");
   $("server").value = store.get("server", "");
   setEditing(null);
   renderFriends();

@@ -17,9 +17,10 @@ export const DEFAULT_WEATHER_SETTINGS = {
   enabled: false,
   hour: 7,           // 毎朝この時（日本時間）に送る
   rainOnly: false,   // true なら雨・雪の日だけ送る
-  hot: 28,           // 最高気温がこれ以上なら「暑い」
-  cold: 12,          // 最高気温がこれ以下なら「寒い」
+  hot: 30,           // 最高気温がこれ以上なら「暑い」
+  cold: 10,          // 最高気温がこれ以下なら「寒い」
   pressureDrop: 5,   // 半日でこれ以上（hPa）気圧が下がりそうなら「気圧」コメント
+  topics: true,      // 満月や七夕などの「今日の小ネタ」を付ける
   comments: {
     sunny:    ["いい天気だね！洗濯日和だよ", "お日さまが出てるよ〜"],
     cloudy:   ["今日はくもりだよ", "どんより空だけど元気にいこ"],
@@ -59,13 +60,6 @@ export async function searchPlace(query) {
   }));
 }
 
-// 今の天気（ボタンを押したときに添える用）
-export async function fetchCurrent(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
-  const c = (await (await fetch(url)).json()).current;
-  return { temp: Math.round(c.temperature_2m), ...weatherInfo(c.weather_code) };
-}
-
 // 今日の予報 + 気圧の下がり幅
 export async function fetchForecast(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
@@ -91,6 +85,79 @@ export async function fetchForecast(lat, lon) {
   };
 }
 
+// ---- 今日の小ネタ（月の満ち欠け・季節の行事）----
+
+// 日本時間の年月日・曜日
+export function jstToday(now = Date.now()) {
+  const t = new Date(now + 9 * 60 * 60 * 1000);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), dow: t.getUTCDay() };
+}
+
+// 太陽と月の黄経の差（月齢の角度）。簡易計算だけど誤差は1時間程度
+const rad = Math.PI / 180;
+function moonElongation(ms) {
+  const n = ms / 86400000 - 10957.5; // J2000.0 からの日数
+  const g = (357.528 + 0.9856003 * n) * rad;
+  const sun = 280.460 + 0.9856474 * n + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g);
+  const Mm = (134.963 + 13.064993 * n) * rad;
+  const D = (297.850 + 12.190749 * n) * rad;
+  const F = (93.272 + 13.229350 * n) * rad;
+  const moon = 218.316 + 13.176396 * n + 6.289 * Math.sin(Mm) + 1.274 * Math.sin(2 * D - Mm)
+    + 0.658 * Math.sin(2 * D) + 0.214 * Math.sin(2 * Mm) - 0.186 * Math.sin(g) - 0.114 * Math.sin(2 * F);
+  return ((moon - sun) % 360 + 360) % 360;
+}
+
+// 今日（日本時間の0時〜24時）に新月・上弦・満月・下弦の瞬間があればそれを返す
+export function moonEvent({ y, m, d }) {
+  const start = Date.UTC(y, m - 1, d) - 9 * 60 * 60 * 1000;
+  const a = moonElongation(start), b = moonElongation(start + 86400000);
+  const phases = [
+    { deg: 0,   text: "🌑 今日は新月だよ" },
+    { deg: 90,  text: "🌓 今日は上弦の月だよ" },
+    { deg: 180, text: "🌕 今日は満月だよ" },
+    { deg: 270, text: "🌗 今日は下弦の月だよ" },
+  ];
+  // 1日で約12度進むので、a → b の間に目標の角度をまたいだかを見る
+  const crossed = deg => ((deg - a + 360) % 360) < ((b - a + 360) % 360);
+  return phases.find(p => crossed(p.deg))?.text || "";
+}
+
+// 春分・夏至・秋分・冬至・立春の日付（1980〜2099年で使える近似式）
+const solarDay = (y, base) => Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+const risshun = y => Math.floor(3.8693 + 0.242713 * (y - 1980) - Math.floor((y - 1981) / 4)); // 2月はまだその年のうるう日前
+// その月の第 n 日曜日
+const nthSunday = (y, m, n) => { const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay(); return 1 + (7 - first) % 7 + (n - 1) * 7; };
+
+export function seasonalEvents({ y, m, d }) {
+  const list = [
+    [1, 1, "🎍 あけましておめでとう！"],
+    [2, risshun(y) - 1, "👹 今日は節分！鬼は外〜"],
+    [2, 14, "💝 今日はバレンタイン"],
+    [3, 3, "🎎 今日はひな祭り"],
+    [3, solarDay(y, 20.8431), "🌸 今日は春分の日"],
+    [3, 14, "🍪 今日はホワイトデー"],
+    [4, 1, "🤡 今日はエイプリルフール"],
+    [5, 5, "🎏 今日はこどもの日"],
+    [5, nthSunday(y, 5, 2), "💐 今日は母の日"],
+    [6, solarDay(y, 21.851),"☀️ 今日は夏至。一年で一番昼が長い日"],
+    [6, nthSunday(y, 6, 3), "👔 今日は父の日"],
+    [7, 7, "🎋 今日は七夕！"],
+    [9, solarDay(y, 23.2488), "🍁 今日は秋分の日"],
+    [10, 31, "🎃 今日はハロウィン！"],
+    [12, solarDay(y, 22.6587), "🍊 今日は冬至。ゆず湯の日"],
+    [12, 24, "🎄 今日はクリスマスイブ"],
+    [12, 25, "🎅 メリークリスマス！"],
+    [12, 31, "🔔 今日は大晦日。今年もありがとう"],
+  ];
+  return list.filter(([mm, dd]) => mm === m && dd === d).map(e => e[2]);
+}
+
+// 今日の小ネタをまとめて（行事 → 月の順）
+export function todayTopics(now = Date.now()) {
+  const t = jstToday(now);
+  return [...seasonalEvents(t), moonEvent(t)].filter(Boolean);
+}
+
 const pick = list => {
   const lines = (list || []).map(s => s.trim()).filter(Boolean);
   return lines.length ? lines[Math.floor(Math.random() * lines.length)] : "";
@@ -108,6 +175,7 @@ export function buildMessage(settings, recipient, fc, iconBase) {
     pick(s.comments[w.type]),
     pick(s.comments[tempType]),
     fc.pressureDrop >= s.pressureDrop ? pick(s.comments.pressure) : "",
+    ...(s.topics ? todayTopics() : []),
   ].filter(Boolean).map(fill);
 
   return {
