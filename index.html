@@ -579,7 +579,7 @@
         ログ・友達・設定をまとめて1つのファイルにします。「"ファイル"に保存」→ iCloud Drive に置いておくと安心。<br>
         上書き：バックアップの時点に丸ごと戻す　／　合算：今のログに回数を足す（友達も追加）
       </p>
-      <button class="sub-btn del" id="logReset" style="width:100%;margin-top:4px">ログをリセット</button>
+      <button class="sub-btn del" id="logReset" style="width:100%;margin-top:4px">ログをリセット（バッジ・レベルも）</button>
     </div>
   </section>
 
@@ -1578,9 +1578,19 @@ function updateOrder(log) {
 let viewYear = new Date().getFullYear();
 $("yPrev").onclick = () => { viewYear--; renderLog(); };
 $("yNext").onclick = () => { viewYear++; renderLog(); };
+// ログのリセット。回数から計算するバッジ・レベルや、チンチロなどの記録もまとめて最初からにする
+// （友達・天気・ランダムワードの設定は残す）
 $("logReset").onclick = () => {
-  if (!confirm("ログを全部消しますか？（元に戻せません）")) return;
-  store.set("log", {}); renderLog();
+  if (!confirm("ログを全部消しますか？\n送った回数・送った履歴・バッジ・ボタンのレベルが全部最初からになります。（元に戻せません）")) return;
+  store.set("log", {});
+  store.set("daily", {});
+  store.set("history", []);
+  store.set("stats", {});
+  store.set("badges", {});
+  store.set("levels", {});
+  renderLevels(false);
+  renderLog();
+  toast("ログをリセットしました", true);
 };
 
 const sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
