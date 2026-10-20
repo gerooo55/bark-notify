@@ -59,12 +59,81 @@
   #toast.show { opacity: 1; }
   .hint { font-size: 12px; color: var(--sub); line-height: 1.6; }
   details summary { cursor: pointer; color: var(--sub); font-size: 14px; }
+
+  /* タブ */
+  .tabs { display: flex; gap: 6px; background: var(--card); border: 1px solid var(--border);
+          border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .tabs button { flex: 1; padding: 9px; background: none; color: var(--sub); font-weight: 600; }
+  .tabs button.on { background: var(--accent); color: #fff; }
+
+  /* ログ */
+  .hero { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hero small { font-size: 15px; color: var(--sub); font-weight: 500; margin-left: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tile { background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+          padding: 10px 6px; text-align: center; }
+  .tile .e { font-size: 30px; line-height: 1.2; }
+  .tile .n { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .bar { fill: var(--accent); }
+  .chart .hit { fill: transparent; cursor: pointer; }
+  .chart .hit:hover + .bar, .chart .bar.on { fill: #ff7a5c; }
+  .chart .grid { stroke: var(--border); stroke-width: 1; }
+  .chart text { fill: var(--sub); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .tip { position: absolute; pointer-events: none; background: var(--text); color: var(--bg);
+         font-size: 12px; line-height: 1.5; padding: 6px 10px; border-radius: 8px;
+         white-space: nowrap; transform: translate(-50%, -100%); display: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 4px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { color: var(--sub); font-weight: 600; font-size: 12px; }
+  td.num, th.num { text-align: right; }
+  td.mix { color: var(--sub); font-size: 13px; }
+  .year { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px; }
+  .year button { background: var(--bg); color: var(--text); border: 1px solid var(--border);
+                 width: 34px; height: 34px; }
+  .year span { font-weight: 700; min-width: 70px; text-align: center; }
 </style>
 </head>
 <body>
 <main>
   <h1>🔔 Bark 通知ボタン</h1>
 
+  <div class="tabs">
+    <button class="on" data-page="pageSend">送る</button>
+    <button data-page="pageLog">📊 ログ</button>
+  </div>
+
+  <section id="pageLog" hidden>
+    <div class="card">
+      <h2>これまでに送った回数</h2>
+      <div class="hero" id="logTotal">0<small>回</small></div>
+    </div>
+    <div class="card">
+      <h2>絵文字ごとの累計</h2>
+      <div class="tiles" id="logTiles"></div>
+    </div>
+    <div class="card">
+      <h2>月ごとの回数</h2>
+      <div class="year">
+        <button id="yPrev" aria-label="前の年">‹</button>
+        <span id="yLabel"></span>
+        <button id="yNext" aria-label="次の年">›</button>
+      </div>
+      <div class="chart" id="logChart"><div class="tip" id="tip"></div></div>
+    </div>
+    <div class="card">
+      <h2>年月ごとの一覧</h2>
+      <table>
+        <thead><tr><th>年月</th><th>内訳</th><th class="num">回数</th></tr></thead>
+        <tbody id="logTable"></tbody>
+      </table>
+      <p class="hint">ログはこの端末のブラウザにだけ保存されます。</p>
+      <button class="sub-btn del" id="logReset" style="width:100%;margin-top:4px">ログをリセット</button>
+    </div>
+  </section>
+
+  <section id="pageSend">
   <div class="card">
     <h2>送る相手</h2>
     <div class="friends" id="friends"></div>
@@ -108,7 +177,7 @@
   <div class="card">
     <details>
       <summary>⚙️ 設定（自分の名前・友達を追加）</summary>
-      <label>自分の名前（通知のタイトルに出ます）</label>
+      <label>自分の名前（自由メッセージのタイトルに出ます）</label>
       <input id="myName" placeholder="例: たろう">
 
       <label>友達の名前</label>
@@ -118,6 +187,13 @@
       <button class="sub-btn" id="addBtn" style="width:100%;margin-top:10px">友達を追加</button>
       <button class="sub-btn del" id="delBtn" style="width:100%;margin-top:8px">選択中の友達を削除</button>
 
+      <label>通知のアイコン</label>
+      <select id="icon">
+        <option value="emoji">💬 吹き出しの絵文字</option>
+        <option value="fa">Font Awesome の comments アイコン</option>
+        <option value="none">Bark のアイコン（変更しない）</option>
+      </select>
+
       <label>Bark サーバー（自前サーバーの人だけ変更）</label>
       <input id="server" placeholder="https://api.day.app">
       <p class="hint">
@@ -126,17 +202,19 @@
       </p>
     </details>
   </div>
+  </section>
 </main>
 <div id="toast"></div>
 
 <script>
+// 通知のタイトルは絵文字だけ。label はボタンの読み上げ用
 const QUICK = [
-  { emoji: "👋", body: "👋 やっほー！" },
-  { emoji: "📞", body: "📞 電話してほしい！", level: "timeSensitive" },
-  { emoji: "🍜", body: "🍜 ごはん行かない？" },
-  { emoji: "🎮", body: "🎮 ゲームしよう！" },
-  { emoji: "🏠", body: "🏠 着いたよ" },
-  { emoji: "😴", body: "😴 おやすみ〜", level: "passive" },
+  { emoji: "👋", label: "やっほー" },
+  { emoji: "📞", label: "電話して", level: "timeSensitive" },
+  { emoji: "🍜", label: "ごはん行こ" },
+  { emoji: "🎮", label: "ゲームしよ" },
+  { emoji: "🏠", label: "着いた" },
+  { emoji: "😴", label: "おやすみ", level: "passive" },
 ];
 
 const store = {
@@ -194,22 +272,46 @@ $("delBtn").onclick = () => {
   renderFriends();
 };
 
+// 通知アイコン（Bark の icon パラメータは画像URLを指定する）
+const ICONS = {
+  emoji: "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f4ac.png", // 💬
+  fa: (() => { try { return new URL("comments.png", location.href).href; } catch { return ""; } })(), // Font Awesome fa-regular fa-comments（GitHub Pages に置いた画像）
+  none: "",
+};
+$("icon").value = store.get("icon", "emoji");
+$("icon").onchange = e => store.set("icon", e.target.value);
+
+// ログは「年月 → 絵文字 → 回数」で集計して保存（件数が増えても容量を食わない）
+const FREE = "✏️";
+function addLog(emoji) {
+  const d = new Date();
+  const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const log = store.get("log", {});
+  log[ym] = log[ym] || {};
+  log[ym][emoji] = (log[ym][emoji] || 0) + 1;
+  store.set("log", log);
+}
+
 // 1タップ = 1通知。前の送信を待たずに即送る
-async function send(body, opts = {}) {
+// title だけ指定すると本文なしの通知になる
+async function send(title, body, opts = {}) {
   const f = friends[selected];
   if (!f) { toast("先に友達を追加してね", false); return false; }
-  const me = store.get("myName", "") || "だれか";
   const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
   // group を付けると iPhone 側で1つの束にまとめられるので、連打時は付けない
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ title });
+  if (body) params.set("body", body);
+  const icon = ICONS[store.get("icon", "emoji")];
+  if (icon) params.set("icon", icon);
   if (opts.sound) params.set("sound", opts.sound);
   if (opts.level) params.set("level", opts.level);
-  const url = `${server}/${encodeURIComponent(f.key)}/${encodeURIComponent(me + " から")}/${encodeURIComponent(body)}?${params}`;
+  const url = `${server}/${encodeURIComponent(f.key)}?${params}`;
 
   try {
     const res = await fetch(url, { keepalive: true });
     const data = await res.json().catch(() => ({}));
     if (res.ok && (data.code === undefined || data.code === 200)) {
+      addLog(opts.logAs || title);
       if (!opts.quiet) toast(f.name + " に送信しました ✓", true);
       return true;
     }
@@ -260,7 +362,7 @@ function burst(btn, emoji) {
 
 QUICK.forEach(q => {
   const b = document.createElement("button");
-  b.setAttribute("aria-label", q.body);
+  b.setAttribute("aria-label", q.label);
   b.textContent = q.emoji;
   const badge = document.createElement("span");
   badge.className = "count";
@@ -285,7 +387,7 @@ QUICK.forEach(q => {
     clearTimeout(comboTimer);
     comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    send(q.body, { level: q.level, quiet: true }).then(ok => {
+    send(q.emoji, "", { level: q.level, quiet: true }).then(ok => {
       done++; if (ok) sent++;
       report();
     });
@@ -296,10 +398,111 @@ QUICK.forEach(q => {
 $("sendBtn").onclick = () => {
   const body = $("msg").value.trim();
   if (!body) return toast("メッセージを入力してね", false);
-  send(body, { sound: $("sound").value, level: $("level").value });
+  const me = store.get("myName", "") || "だれか";
+  send(me + " から", body, { sound: $("sound").value, level: $("level").value, logAs: FREE });
   $("msg").value = "";
 };
 $("msg").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("sendBtn").click(); });
+
+// ---- タブ ----
+document.querySelectorAll(".tabs button").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === t));
+    $("pageSend").hidden = t.dataset.page !== "pageSend";
+    $("pageLog").hidden = t.dataset.page !== "pageLog";
+    if (t.dataset.page === "pageLog") renderLog();
+  };
+});
+
+// ---- ログ画面 ----
+const ORDER = [...QUICK.map(q => q.emoji), FREE];
+let viewYear = new Date().getFullYear();
+$("yPrev").onclick = () => { viewYear--; renderLog(); };
+$("yNext").onclick = () => { viewYear++; renderLog(); };
+$("logReset").onclick = () => {
+  if (!confirm("ログを全部消しますか？（元に戻せません）")) return;
+  store.set("log", {}); renderLog();
+};
+
+const sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
+const mix = o => ORDER.filter(e => o && o[e]).map(e => `${e}${o[e]}`).join("  ");
+
+function renderLog() {
+  const log = store.get("log", {});
+  const months = Object.keys(log).sort().reverse();
+
+  // 合計と絵文字ごとの累計
+  const totals = {};
+  months.forEach(m => Object.entries(log[m]).forEach(([e, n]) => totals[e] = (totals[e] || 0) + n));
+  $("logTotal").innerHTML = `${sum(totals).toLocaleString()}<small>回</small>`;
+  $("logTiles").innerHTML = ORDER.map(e =>
+    `<div class="tile"><div class="e">${e}</div><div class="n">${(totals[e] || 0).toLocaleString()}</div></div>`
+  ).join("");
+
+  // 年月ごとの一覧
+  $("logTable").innerHTML = months.length
+    ? months.map(m => {
+        const [y, mo] = m.split("-");
+        return `<tr><td>${y}年${+mo}月</td><td class="mix">${mix(log[m])}</td><td class="num">${sum(log[m]).toLocaleString()}</td></tr>`;
+      }).join("")
+    : `<tr><td colspan="3" class="mix">まだ記録がありません</td></tr>`;
+
+  renderChart(log);
+}
+
+// 選んだ年の1〜12月を棒グラフで表示。タップ/ホバーで内訳を出す
+function renderChart(log) {
+  $("yLabel").textContent = viewYear + "年";
+  const data = Array.from({ length: 12 }, (_, i) => {
+    const key = `${viewYear}-${String(i + 1).padStart(2, "0")}`;
+    return { m: i + 1, o: log[key] || {}, n: sum(log[key]) };
+  });
+  const W = 340, H = 180, L = 30, B = 20, T = 8;
+  const max = Math.max(...data.map(d => d.n), 1);
+  const step = Math.pow(10, Math.floor(Math.log10(max)));
+  const nice = [1, 2, 5, 10].map(s => s * step).find(s => max / s <= 4) || step * 10;
+  const top = Math.ceil(max * 1.15 / nice) * nice; // 吹き出しが年の切り替えに被らないよう上に余白
+  const y = v => T + (H - T - B) * (1 - v / top);
+  const bw = (W - L) / 12;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${viewYear}年の月ごとの送信回数">`;
+  for (let v = 0; v <= top; v += nice) {
+    svg += `<line class="grid" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/>`;
+    svg += `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  }
+  data.forEach((d, i) => {
+    const x = L + i * bw, w = bw - 6, h = y(0) - y(d.n);
+    const r = Math.min(4, w / 2, h);
+    // 上だけ角丸の棒
+    const path = d.n
+      ? `M${x + 3},${y(0)} V${y(d.n) + r} Q${x + 3},${y(d.n)} ${x + 3 + r},${y(d.n)} H${x + 3 + w - r} Q${x + 3 + w},${y(d.n)} ${x + 3 + w},${y(d.n) + r} V${y(0)} Z`
+      : "";
+    svg += `<rect class="hit" data-i="${i}" x="${x}" y="${T}" width="${bw}" height="${H - T - B}"/>`;
+    svg += `<path class="bar" data-i="${i}" d="${path}"/>`;
+    svg += `<text x="${x + bw / 2}" y="${H - 4}" text-anchor="middle">${d.m}</text>`;
+  });
+  svg += `</svg>`;
+
+  const box = $("logChart");
+  box.querySelector("svg")?.remove();
+  box.insertAdjacentHTML("afterbegin", svg);
+  const tip = $("tip");
+  const show = i => {
+    const d = data[i];
+    box.querySelectorAll(".bar").forEach(b => b.classList.toggle("on", +b.dataset.i === i));
+    tip.innerHTML = `<b>${viewYear}年${d.m}月　${d.n}回</b>${d.n ? "<br>" + mix(d.o) : ""}`;
+    const svgEl = box.querySelector("svg"), s = svgEl.clientWidth / W;
+    tip.style.left = Math.min(Math.max((L + i * bw + bw / 2) * s, 60), svgEl.clientWidth - 60) + "px";
+    tip.style.top = (y(d.n) * s - 6) + "px";
+    tip.style.display = "block";
+  };
+  const hide = () => { tip.style.display = "none"; box.querySelectorAll(".bar").forEach(b => b.classList.remove("on")); };
+  box.querySelectorAll(".hit").forEach(h => {
+    h.addEventListener("pointerenter", () => show(+h.dataset.i));
+    h.addEventListener("click", () => show(+h.dataset.i));
+    h.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") hide(); });
+  });
+}
 
 let tt;
 function toast(text, ok) {
