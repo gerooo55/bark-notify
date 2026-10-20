@@ -356,7 +356,7 @@
           </ul>
           <p>コメントや時刻を変えたら、<span class="tag">保存して GitHub に反映</span> を押してね。<span class="tag">今日の予報でプレビュー</span> で、どんな通知になるか確認できます。</p>
           <div class="tip-box">
-            🌕 「今日の小ネタ」をオンにすると、満月や七夕などの日にひとこと付きます。<br>
+            🌕 満月や七夕などの日は、「今日の小ネタ」がひとこと自動で付きます。<br>
             ✏️ コメントに <span class="tag">{name}</span> と書くと友達の名前、<span class="tag">{max}</span> <span class="tag">{min}</span> は最高・最低気温に変わります。<br>
             ⏰ 届く時間は、設定より数分〜30分くらい遅れることがあります。
           </div>
@@ -466,22 +466,19 @@
       <div id="wComments"></div>
       <div class="row">
         <div>
-          <label>暑い（最高気温 ℃以上）</label>
+          <label>暑い<br>最高℃以上</label>
           <input id="wHot" type="number" inputmode="numeric">
         </div>
         <div>
-          <label>寒い（最高気温 ℃以下）</label>
+          <label>寒い<br>最高℃以下</label>
           <input id="wCold" type="number" inputmode="numeric">
         </div>
         <div>
-          <label>気圧（hPa 下がる）</label>
+          <label>気圧<br>hPa下がる</label>
           <input id="wDrop" type="number" inputmode="decimal" step="0.5">
         </div>
       </div>
-      <label class="switch-row" style="margin-top:16px">
-        <span>今日の小ネタを付ける<br><small class="hint">🌕 満月・🌑 新月などの月の満ち欠けや、🎋 七夕・🎃 ハロウィンなどの行事</small></span>
-        <input type="checkbox" id="wTopics" class="switch">
-      </label>
+      <p class="hint" style="margin:14px 0 0">🌕 満月・🌑 新月などの月の満ち欠けや、🎋 七夕・🎃 ハロウィンなどの行事の日は、「今日の小ネタ」が自動で付きます。</p>
     </div>
 
     <div class="card">
@@ -1373,7 +1370,8 @@ for (let h = 0; h < 24; h++) $("wHour").insertAdjacentHTML("beforeend", `<option
 async function weatherSettings() {
   const { DEFAULT_WEATHER_SETTINGS: D } = await W();
   const s = store.get("weather", {});
-  return { ...D, recipients: [], ...s, comments: { ...D.comments, ...(s.comments || {}) } };
+  // 小ネタは以前オフにしていても、いつも付ける
+  return { ...D, recipients: [], ...s, topics: true, comments: { ...D.comments, ...(s.comments || {}) } };
 }
 
 async function renderWeather() {
@@ -1385,7 +1383,6 @@ async function renderWeather() {
   $("wHot").value = s.hot;
   $("wCold").value = s.cold;
   $("wDrop").value = s.pressureDrop;
-  $("wTopics").checked = s.topics;
 
   $("wRecipients").innerHTML = friends.length ? friends.map((f, i) => `
     <label class="check">
@@ -1419,7 +1416,7 @@ async function readWeatherForm() {
     hot: num("wHot", s.hot),
     cold: num("wCold", s.cold),
     pressureDrop: num("wDrop", s.pressureDrop),
-    topics: $("wTopics").checked,
+    topics: true, // 小ネタはいつも付ける
     recipients: [...document.querySelectorAll("#wRecipients input:checked")].map(i => i.dataset.key),
     comments,
   };
