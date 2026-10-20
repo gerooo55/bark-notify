@@ -170,14 +170,14 @@ export function buildMessage(settings, recipient, fc, iconBase) {
   const tempType = fc.max >= s.hot ? "hot" : fc.max <= s.cold ? "cold" : "mild";
   const fill = t => t.replaceAll("{name}", recipient.name).replaceAll("{max}", fc.max).replaceAll("{min}", fc.min);
 
-  // iPhone の通知は「タイトル・サブタイトル・本文2行」までしかパッと見えないので、
-  // 数字はサブタイトルにまとめ、本文は1行目＝天気と気温のコメント、2行目＝気圧や小ネタ（なければ気温のコメント）にする
+  // iPhone の通知は「タイトル・サブタイトル・本文2行」までしかパッと見えないので、数字はサブタイトルにまとめる。
+  // 本文は、たまにしかない気圧・小ネタを先に、いつもの天気・気温のコメントをその後ろに（見切れても長押しで全部読める）
   const normal = [pick(s.comments[w.type]), pick(s.comments[tempType])].filter(Boolean).map(fill);
   const special = [
     fc.pressureDrop >= s.pressureDrop ? pick(s.comments.pressure) : "",
     ...(s.topics ? todayTopics() : []),
   ].filter(Boolean).map(fill);
-  const lines = special.length ? [normal.join(" "), special.join(" ")] : normal;
+  const lines = [special.join(" "), normal.join(" ")];
 
   return {
     title: `${w.emoji} ${recipient.place.name}は${w.label}`,

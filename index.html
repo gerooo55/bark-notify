@@ -583,7 +583,9 @@ function parseKey(input) {
 
 // 天気まわりの処理は weather.js（GitHub Actions と共通）。使うときに読み込む
 let weatherMod;
-const W = () => (weatherMod ||= import("./weather.js"));
+// weather.js を直したら WEATHER_JS_VERSION も変える（iPhone が古い weather.js をキャッシュで使い続けないように）
+const WEATHER_JS_VERSION = "2026-10-20c";
+const W = () => (weatherMod ||= import(`./weather.js?v=${WEATHER_JS_VERSION}`));
 
 // 友達の地域（天気用）
 let formPlace = null;
@@ -1148,7 +1150,7 @@ $("wPreview").onclick = async () => {
     const items = await buildWeatherMessages();
     $("wPreviewOut").innerHTML = items.map(({ r, msg }) => `
       <div class="pv"><img src="${msg.icon}" alt="">
-        <div><b>${msg.title.replace(/</g, "&lt;")}</b><b style="font-weight:600;color:var(--text)">${msg.subtitle.replace(/</g, "&lt;")}</b>${msg.body.replace(/</g, "&lt;")}<br><small style="color:var(--sub)">→ ${r.name}</small></div>
+        <div><b>${msg.title.replace(/</g, "&lt;")}</b><b style="font-weight:600;color:var(--text)">${(msg.subtitle || "").replace(/</g, "&lt;")}</b>${msg.body.replace(/</g, "&lt;")}<br><small style="color:var(--sub)">→ ${r.name}</small></div>
       </div>`).join("");
   } catch (e) { toast(e.message, false); }
 };
