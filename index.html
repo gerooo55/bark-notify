@@ -173,7 +173,7 @@
     <button class="on" data-page="pageSend">送る</button>
     <button data-page="pageLog">📊 ログ</button>
     <button data-page="pageWeather">☀️ 天気</button>
-    <button data-page="pageWords">💬 ワード</button>
+    <button data-page="pageWords">💬 ランダム</button>
   </div>
 
   <section id="pageHelp" class="help" hidden>
@@ -207,7 +207,7 @@
             <li>天気予報も送りたいときは、<b>住んでいる地域</b>に「渋谷」「大阪市」などを入れて <span class="tag">検索</span> → 候補から選ぶ</li>
             <li><span class="tag">友達を追加</span> を押したら完了！</li>
           </ol>
-          <p>あとから直したいときは、「送る相手」で友達を選んでから <span class="tag">選択中の友達を編集</span> を押してね。</p>
+          <p>あとから直したいときは、「送る相手」で友達を<b>1人だけ</b>選んでから <span class="tag">選択中の友達を編集</span> を押してね。</p>
         </div>
       </details>
 
@@ -215,7 +215,8 @@
         <summary>📲 ③ 通知を送る</summary>
         <div class="body">
           <ol>
-            <li>「送る相手」で、送りたい友達を<b>タップして選ぶ</b>（オレンジ色になったらOK）</li>
+            <li>「送る相手」で、送りたい友達を<b>タップして選ぶ</b>（オレンジ色で ✓ が付いたらOK）<br>
+              <b>何人でも選べます。</b>選んだ全員に同時に届くよ。<span class="tag">👥 全員</span> で一気に選んだり外したりできます</li>
             <li>上の<b>絵文字ボタンを押す</b>だけ！</li>
           </ol>
           <p>押した回数だけ通知が届くので、<b>連打もOK</b>。ボタンの右上に「×3」のように回数が出ます。</p>
@@ -231,7 +232,7 @@
             <li><b>🌤 天気予報</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
             <li><b>🔮 占い</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
             <li><b>🎲 サイコロ</b><br>1〜6のどれかが届きます。出た目はあなたの画面にも出るので、勝負にも使えるよ。</li>
-            <li><b>💬 ランダム</b><br>「💬 ワード」タブで作った言葉の中から、ランダムに1つ届きます。</li>
+            <li><b>💬 ランダム</b><br>「💬 ランダム」タブで作った言葉の中から、ランダムに1つ届きます。</li>
           </ul>
         </div>
       </details>
@@ -240,7 +241,7 @@
         <summary>💬 ⑤ ランダムワードを作る</summary>
         <div class="body">
           <ol>
-            <li>上の <span class="tag">💬 ワード</span> タブを開く</li>
+            <li>上の <span class="tag">💬 ランダム</span> タブを開く</li>
             <li><b>タイトル</b>に通知の見出し（例：💪 がんばれ）を書く</li>
             <li><b>本文</b>に、届けたい言葉を<b>1行に1つずつ</b>書く</li>
             <li>もっと増やしたいときは <span class="tag">＋ タイトルを追加</span></li>
@@ -485,6 +486,7 @@
     <h2>送る相手</h2>
     <div class="friends" id="friends"></div>
     <p class="hint" id="noFriend">まだ友達がいません。下の「⚙️ 設定」から登録してね。</p>
+    <p class="hint" id="friendHint" style="margin:10px 0 0">タップで選ぶ／外す。何人でも選べて、選んだ全員にまとめて届きます。</p>
   </div>
 
   <div class="card">
@@ -558,8 +560,26 @@ const store = {
 };
 
 let friends = store.get("friends", []);
-let selected = store.get("selected", 0);
 const $ = id => document.getElementById(id);
+
+// 送る相手（複数選べる）。友達の Bark キーで覚えておく
+// 以前の「1人だけ選ぶ」形式（selected = 番号）からの引き継ぎもする
+let targets = store.get("targets", null)
+  ?? (friends[store.get("selected", 0)] ? [friends[store.get("selected", 0)].key] : []);
+function setTargets(keys) {
+  targets = keys.filter(k => friends.some(f => f.key === k));
+  store.set("targets", targets);
+  renderFriends();
+}
+const getTargets = () => friends.filter(f => targets.includes(f.key));
+// 送る前のチェック。選ばれていなければお知らせして null
+function needTargets() {
+  const list = getTargets();
+  if (list.length) return list;
+  toast(friends.length ? "「送る相手」で友達を選んでね" : "先に友達を追加してね", false);
+  return null;
+}
+const names = list => list.map(f => f.name).join("・");
 
 $("server").value = store.get("server", "");
 $("server").oninput = e => store.set("server", e.target.value.trim());
@@ -567,14 +587,25 @@ $("server").oninput = e => store.set("server", e.target.value.trim());
 function renderFriends() {
   const box = $("friends");
   box.innerHTML = "";
-  friends.forEach((f, i) => {
+  // 2人以上いるときは「全員」ボタン
+  if (friends.length >= 2) {
+    const all = friends.every(f => targets.includes(f.key));
     const b = document.createElement("button");
-    b.className = "friend" + (i === selected ? " on" : "");
-    b.textContent = f.name;
-    b.onclick = () => { selected = i; store.set("selected", i); renderFriends(); };
+    b.className = "friend all" + (all ? " on" : "");
+    b.textContent = "👥 全員";
+    b.onclick = () => setTargets(all ? [] : friends.map(f => f.key));
+    box.appendChild(b);
+  }
+  friends.forEach(f => {
+    const on = targets.includes(f.key);
+    const b = document.createElement("button");
+    b.className = "friend" + (on ? " on" : "");
+    b.textContent = (on ? "✓ " : "") + f.name;
+    b.onclick = () => setTargets(on ? targets.filter(k => k !== f.key) : [...targets, f.key]);
     box.appendChild(b);
   });
   $("noFriend").style.display = friends.length ? "none" : "block";
+  $("friendHint").style.display = friends.length ? "block" : "none";
 }
 
 // URLを貼られてもキー部分だけ取り出す
@@ -635,34 +666,45 @@ $("addBtn").onclick = () => {
   if (!name || !key) return toast("名前とキーを入力してね", false);
   const f = { name, key };
   if (formPlace) f.place = formPlace;
+  let next;
   if (editing !== null) {
+    // キーを変えたときも、選んでいる状態は引き継ぐ
+    const oldKey = friends[editing].key;
     friends[editing] = f;
-    selected = editing;
+    next = targets.map(k => k === oldKey ? key : k);
   } else {
     friends.push(f);
-    selected = friends.length - 1;
+    next = [key]; // 追加した友達を選んだ状態にする
   }
-  store.set("friends", friends); store.set("selected", selected);
+  store.set("friends", friends);
   toast(name + (editing !== null ? " を更新しました" : " を追加しました"), true);
   setEditing(null);
-  renderFriends();
+  setTargets(next);
 };
+
+// 編集・削除は「送る相手」で1人だけ選んでいるときに使える
+function onlyTarget() {
+  const list = getTargets();
+  if (list.length === 1) return friends.indexOf(list[0]);
+  toast("「送る相手」で友達を1人だけ選んでね", false);
+  return -1;
+}
 
 $("editBtn").onclick = () => {
   if (editing !== null) return setEditing(null);
-  if (!friends[selected]) return toast("編集する友達を「送る相手」で選んでね", false);
-  setEditing(selected);
+  const i = onlyTarget();
+  if (i < 0) return;
+  setEditing(i);
   $("fName").focus();
 };
 
 $("delBtn").onclick = () => {
-  const f = friends[selected];
-  if (!f || !confirm(f.name + " を削除しますか？")) return;
-  friends.splice(selected, 1);
-  selected = 0;
-  store.set("friends", friends); store.set("selected", selected);
+  const i = onlyTarget();
+  if (i < 0 || !confirm(friends[i].name + " を削除しますか？")) return;
+  friends.splice(i, 1);
+  store.set("friends", friends);
   setEditing(null);
-  renderFriends();
+  setTargets(targets);
 };
 
 // 通知アイコン（Bark の icon パラメータは画像URLを指定する）
@@ -704,11 +746,9 @@ function addLog(emoji) {
   store.set("log", log);
 }
 
-// 1タップ = 1通知。前の送信を待たずに即送る
+// 1人に1通送る。成功したら true（ログにも記録）
 // title だけ指定すると本文なしの通知になる
-async function send(title, body, opts = {}) {
-  const f = friends[selected];
-  if (!f) { toast("先に友達を追加してね", false); return false; }
+async function sendOne(f, title, body, opts = {}) {
   const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
   // group を付けると iPhone 側で1つの束にまとめられるので、連打時は付けない
   const params = new URLSearchParams({ title });
@@ -725,14 +765,28 @@ async function send(title, body, opts = {}) {
     const data = await res.json().catch(() => ({}));
     if (res.ok && (data.code === undefined || data.code === 200)) {
       addLog(opts.logAs || title);
-      if (!opts.quiet) toast(f.name + " に送信しました ✓", true);
       return true;
     }
-    toast("送信失敗: " + (data.message || res.status), false);
-  } catch {
-    toast("送信失敗（キーが間違ってるかも）", false);
-  }
+  } catch {}
   return false;
+}
+
+// 選んでいる全員に送る。make(f) で1人ずつ中身を作れる（占いなどを人ごとに変える用）
+// 前の送信を待たずに即送る。結果の件数を返す
+async function sendAll(list, make) {
+  const results = await Promise.all(list.map(f => {
+    const m = make(f);
+    return m ? sendOne(f, m.title, m.body, m.opts) : Promise.resolve(false);
+  }));
+  const ok = list.filter((_, i) => results[i]);
+  const ng = list.filter((_, i) => !results[i]);
+  return { ok, ng, total: list.length };
+}
+
+// 送信結果のお知らせ（全員成功 / 一部失敗）
+function toastResult(r, what = "") {
+  if (!r.ng.length) toast(`${names(r.ok)} に${what}送りました ✓`, true);
+  else toast(`${names(r.ng)} への送信に失敗（キーが間違ってるかも）`, false);
 }
 
 // iPhoneの触覚フィードバック（iOS 18以降のSafariで switch を押すと振動する仕組みを利用）
@@ -777,21 +831,31 @@ function burst(btn, emoji) {
 const WEATHER_LOG = "🌤";
 $("weatherSend").innerHTML = `${emo(WEATHER_LOG)}天気予報`;
 $("weatherSend").onclick = async () => {
-  const f = friends[selected];
-  if (!f) return toast("先に友達を追加してね", false);
-  if (!f.place) return toast(`${f.name} の地域が未登録です（⚙️設定の編集から登録してね）`, false);
+  const list = needTargets();
+  if (!list) return;
+  const withPlace = list.filter(f => f.place);
+  const noPlace = list.filter(f => !f.place);
+  if (!withPlace.length) return toast(`${names(noPlace)} の地域が未登録です（⚙️設定の編集から登録してね）`, false);
   const b = $("weatherSend");
   haptic();
   b.disabled = true;
   try {
     const m = await W();
-    const fc = await m.fetchForecast(f.place.lat, f.place.lon);
-    const msg = m.buildMessage(await weatherSettings(), f, fc, here(""));
-    if (!(await m.sendBark(f.key, msg, store.get("server", "") || undefined))) throw new Error();
-    addLog(WEATHER_LOG);
-    toast(`${f.name} に天気予報を送りました ✓`, true);
-  } catch {
-    toast("天気予報の送信に失敗しました", false);
+    const s = await weatherSettings();
+    const server = store.get("server", "") || undefined;
+    // 天気は人ごとに地域がちがうので、1人ずつ予報を取って送る
+    const results = await Promise.all(withPlace.map(async f => {
+      try {
+        const fc = await m.fetchForecast(f.place.lat, f.place.lon);
+        if (!(await m.sendBark(f.key, m.buildMessage(s, f, fc, here("")), server))) return false;
+        addLog(WEATHER_LOG);
+        return true;
+      } catch { return false; }
+    }));
+    const r = { ok: withPlace.filter((_, i) => results[i]), ng: withPlace.filter((_, i) => !results[i]) };
+    if (r.ng.length) toast(`${names(r.ng)} への天気予報の送信に失敗しました`, false);
+    else if (noPlace.length) toast(`${names(r.ok)} に送りました（${names(noPlace)} は地域が未登録）`, true);
+    else toastResult(r, "天気予報を");
   } finally {
     b.disabled = false;
   }
@@ -813,12 +877,17 @@ const LUCKY_COLORS = ["あか", "オレンジ", "きいろ", "ミントグリー
 const LUCKY_LUCK = ["★★★★★ 最高の一日！", "★★★★☆ いい感じ！", "★★★☆☆ まずまず", "★★☆☆☆ のんびりいこう",
   "★☆☆☆☆ 無理せずにね"];
 $("luckySend").innerHTML = `${emo(LUCKY_LOG)}占い`;
-$("luckySend").onclick = () => {
-  if (!friends[selected]) return toast("先に友達を追加してね", false);
+$("luckySend").onclick = async () => {
+  const list = needTargets();
+  if (!list) return;
   haptic();
   // 通知でパッと見えるのは「タイトル・サブタイトル・本文2行」なので、アイテムをサブタイトルにする
-  const body = `🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n${rand(LUCKY_LUCK)}`;
-  send("🔮 今日のラッキーアイテム", body, { subtitle: rand(LUCKY_ITEMS), logAs: LUCKY_LOG });
+  // 占いの結果は1人ずつちがうものにする
+  toastResult(await sendAll(list, () => ({
+    title: "🔮 今日のラッキーアイテム",
+    body: `🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n${rand(LUCKY_LUCK)}`,
+    opts: { subtitle: rand(LUCKY_ITEMS), logAs: LUCKY_LOG },
+  })), "占いを");
 };
 
 // ---- サイコロ ----
@@ -826,14 +895,18 @@ const DICE_LOG = "🎲";
 const DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 $("diceSend").innerHTML = `${emo(DICE_LOG)}サイコロ`;
 $("diceSend").onclick = async () => {
-  const f = friends[selected];
-  if (!f) return toast("先に友達を追加してね", false);
+  const list = needTargets();
+  if (!list) return;
   haptic();
-  const n = 1 + Math.floor(Math.random() * 6);
   burst($("diceSend"), DICE_LOG);
-  if (await send("🎲 サイコロ", `${DICE_FACES[n - 1]} ${n} が出たよ！`, { logAs: DICE_LOG, quiet: true })) {
-    toast(`🎲 ${n} を ${f.name} に送りました ✓`, true);
-  }
+  // 1人ずつサイコロを振る。出た目は送った側にも表示
+  const rolls = new Map(list.map(f => [f.key, 1 + Math.floor(Math.random() * 6)]));
+  const r = await sendAll(list, f => {
+    const n = rolls.get(f.key);
+    return { title: "🎲 サイコロ", body: `${DICE_FACES[n - 1]} ${n} が出たよ！`, opts: { logAs: DICE_LOG } };
+  });
+  if (r.ng.length) return toastResult(r);
+  toast("🎲 " + r.ok.map(f => list.length > 1 ? `${f.name}:${rolls.get(f.key)}` : `${rolls.get(f.key)} を ${f.name} に送りました ✓`).join("  "), true);
 };
 
 // ---- ランダムワード ----
@@ -844,13 +917,17 @@ const DEFAULT_WORDS = [
 ];
 const getWords = () => store.get("words", DEFAULT_WORDS);
 $("wordSend").innerHTML = `${emo(WORD_LOG)}ランダム`;
-$("wordSend").onclick = () => {
-  if (!friends[selected]) return toast("先に友達を追加してね", false);
+$("wordSend").onclick = async () => {
+  const list = needTargets();
+  if (!list) return;
   const groups = getWords().filter(g => g.bodies.length);
-  if (!groups.length) return toast("「💬 ワード」タブで本文を登録してね", false);
+  if (!groups.length) return toast("「💬 ランダム」タブで本文を登録してね", false);
   haptic();
-  const g = rand(groups);
-  send(g.title || "💬", rand(g.bodies), { logAs: WORD_LOG });
+  // ワードも1人ずつランダムに選ぶ
+  toastResult(await sendAll(list, () => {
+    const g = rand(groups);
+    return { title: g.title || "💬", body: rand(g.bodies), opts: { logAs: WORD_LOG } };
+  }), "ワードを");
 };
 
 // ワード設定画面。入力するたびに自動保存
@@ -902,28 +979,29 @@ QUICK.forEach(q => {
   const badge = document.createElement("span");
   badge.className = "count";
   b.appendChild(badge);
-  // 連打が止まって全部の送信結果が返ったら、何回届いたかを表示
-  let combo = 0, comboTimer, taps = 0, sent = 0, done = 0;
+  // 連打が止まって全部の送信結果が返ったら、何件届いたかを表示（複数人なら人数×回数）
+  let combo = 0, comboTimer, expected = 0, sent = 0, done = 0;
   const report = () => {
-    if (combo > 0 || done === 0 || done < taps) return;
-    toast(`${done}回中 ${sent}回 送信成功`, sent === done);
-    taps = sent = done = 0;
+    if (combo > 0 || done === 0 || done < expected) return;
+    toast(`${done}件中 ${sent}件 送信成功`, sent === done);
+    expected = sent = done = 0;
   };
 
   b.addEventListener("click", () => {
-    if (!friends[selected]) return toast("先に友達を追加してね", false);
+    const list = needTargets();
+    if (!list) return;
     haptic();
     b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
     burst(b, q.emoji);
 
-    combo++; taps++;
+    combo++; expected += list.length;
     badge.textContent = "×" + combo;
     badge.classList.add("show");
     clearTimeout(comboTimer);
     comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    send(q.emoji, "", { sound: q.sound, level: q.level, quiet: true }).then(ok => {
-      done++; if (ok) sent++;
+    sendAll(list, () => ({ title: q.emoji, body: "", opts: { sound: q.sound, level: q.level } })).then(r => {
+      done += r.total; sent += r.ok.length;
       report();
     });
   });
@@ -1270,7 +1348,7 @@ function renderChart(log) {
 
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
-const BACKUP_KEYS = ["log", "friends", "selected", "server", "weather", "ghRepo", "words"];
+const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1337,10 +1415,9 @@ $("importFile").onchange = async e => {
   }
 
   friends = store.get("friends", []);
-  selected = Math.min(store.get("selected", 0), Math.max(friends.length - 1, 0));
   $("server").value = store.get("server", "");
   setEditing(null);
-  renderFriends();
+  setTargets(store.get("targets", targets)); // いなくなった友達は選択から外れる
   renderLog();
   toast(importMode === "overwrite" ? "バックアップから戻しました ✓" : "合算しました ✓", true);
 };
