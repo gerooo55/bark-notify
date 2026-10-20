@@ -30,9 +30,26 @@
   .friend { padding: 8px 14px; border: 1px solid var(--border); background: var(--bg);
             color: var(--text); border-radius: 999px; }
   .friend.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .quick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .quick button { padding: 18px 8px; font-size: 17px; background: var(--accent); color: #fff; font-weight: 600; }
-  .quick button:active, .send:active { transform: scale(.97); }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  .quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .quick button { aspect-ratio: 1; font-size: 44px; line-height: 1; position: relative;
+                  background: var(--bg); border: 1px solid var(--border); border-radius: 18px;
+                  transition: transform .08s; }
+  .quick button:active { transform: scale(.9); }
+  .quick button.shake { animation: shake .35s; }
+  .quick .count { position: absolute; top: 6px; right: 8px; font-size: 13px; font-weight: 700;
+                  color: #fff; background: var(--accent); border-radius: 999px; padding: 2px 7px;
+                  opacity: 0; transition: opacity .2s; }
+  .quick .count.show { opacity: 1; }
+  @keyframes shake {
+    0%, 100% { transform: rotate(0) scale(1); }
+    20% { transform: rotate(-12deg) scale(1.08); }
+    40% { transform: rotate(10deg) scale(1.08); }
+    60% { transform: rotate(-7deg) scale(1.04); }
+    80% { transform: rotate(4deg); }
+  }
+  .fly { position: fixed; font-size: 36px; pointer-events: none; z-index: 10; will-change: transform, opacity; }
+  .send:active { transform: scale(.97); }
   .send { width: 100%; padding: 14px; margin-top: 12px; background: var(--text); color: var(--bg); font-weight: 600; }
   .sub-btn { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
   .del { color: var(--ng); }
@@ -114,12 +131,12 @@
 
 <script>
 const QUICK = [
-  { label: "👋 やっほー", body: "やっほー！" },
-  { label: "📞 電話して", body: "電話してほしい！", level: "timeSensitive" },
-  { label: "🍜 ごはん行こ", body: "ごはん行かない？" },
-  { label: "🎮 ゲームしよ", body: "ゲームしよう！" },
-  { label: "🏠 着いた", body: "着いたよ" },
-  { label: "😴 おやすみ", body: "おやすみ〜", level: "passive" },
+  { emoji: "👋", body: "👋 やっほー！" },
+  { emoji: "📞", body: "📞 電話してほしい！", level: "timeSensitive" },
+  { emoji: "🍜", body: "🍜 ごはん行かない？" },
+  { emoji: "🎮", body: "🎮 ゲームしよう！" },
+  { emoji: "🏠", body: "🏠 着いたよ" },
+  { emoji: "😴", body: "😴 おやすみ〜", level: "passive" },
 ];
 
 const store = {
@@ -177,9 +194,10 @@ $("delBtn").onclick = () => {
   renderFriends();
 };
 
+// 1タップ = 1通知。前の送信を待たずに即送る
 async function send(body, opts = {}) {
   const f = friends[selected];
-  if (!f) return toast("先に友達を追加してね", false);
+  if (!f) { toast("先に友達を追加してね", false); return false; }
   const me = store.get("myName", "") || "だれか";
   const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
   const params = new URLSearchParams({ group: "友達通知" });
@@ -188,21 +206,80 @@ async function send(body, opts = {}) {
   const url = `${server}/${encodeURIComponent(f.key)}/${encodeURIComponent(me + " から")}/${encodeURIComponent(body)}?${params}`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { keepalive: true });
     const data = await res.json().catch(() => ({}));
-    if (res.ok && (data.code === undefined || data.code === 200)) toast(f.name + " に送信しました ✓", true);
-    else toast("送信失敗: " + (data.message || res.status), false);
+    if (res.ok && (data.code === undefined || data.code === 200)) {
+      if (!opts.quiet) toast(f.name + " に送信しました ✓", true);
+      return true;
+    }
+    toast("送信失敗: " + (data.message || res.status), false);
   } catch {
-    // CORSで結果が読めない場合でも送信自体は届くので no-cors で再送
-    try { await fetch(url, { mode: "no-cors" }); toast(f.name + " に送信しました（確認不可）", true); }
-    catch { toast("通信エラー", false); }
+    toast("送信失敗（キーが間違ってるかも）", false);
+  }
+  return false;
+}
+
+// iPhoneの触覚フィードバック（iOS 18以降のSafariで switch を押すと振動する仕組みを利用）
+const hapticInput = document.createElement("input");
+hapticInput.type = "checkbox";
+hapticInput.setAttribute("switch", "");
+hapticInput.id = "haptic";
+const hapticLabel = document.createElement("label");
+hapticLabel.htmlFor = "haptic";
+const hapticBox = document.createElement("div");
+hapticBox.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none";
+hapticBox.append(hapticInput, hapticLabel);
+document.body.appendChild(hapticBox);
+function haptic() {
+  try { if (navigator.vibrate) navigator.vibrate(15); else hapticLabel.click(); } catch {}
+}
+
+function burst(btn, emoji) {
+  const r = btn.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement("span");
+    s.className = "fly";
+    s.textContent = emoji;
+    document.body.appendChild(s);
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.8;
+    const dist = 120 + Math.random() * 160;
+    const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
+    const rot = (Math.random() - 0.5) * 120;
+    const scale = 0.6 + Math.random() * 0.8;
+    s.style.left = cx - 18 + "px";
+    s.style.top = cy - 22 + "px";
+    s.animate([
+      { transform: "translate(0,0) scale(.4) rotate(0)", opacity: 1 },
+      { transform: `translate(${dx * .6}px,${dy * .6}px) scale(${scale}) rotate(${rot / 2}deg)`, opacity: 1, offset: .6 },
+      { transform: `translate(${dx}px,${dy}px) scale(${scale * .8}) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: 700 + Math.random() * 300, easing: "cubic-bezier(.2,.8,.3,1)" }).onfinish = () => s.remove();
   }
 }
 
 QUICK.forEach(q => {
   const b = document.createElement("button");
-  b.textContent = q.label;
-  b.onclick = () => send(q.body, { level: q.level });
+  b.setAttribute("aria-label", q.body);
+  b.textContent = q.emoji;
+  const badge = document.createElement("span");
+  badge.className = "count";
+  b.appendChild(badge);
+  let combo = 0, comboTimer;
+
+  b.addEventListener("click", () => {
+    if (!friends[selected]) return toast("先に友達を追加してね", false);
+    haptic();
+    b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+    burst(b, q.emoji);
+
+    combo++;
+    badge.textContent = "×" + combo;
+    badge.classList.add("show");
+    clearTimeout(comboTimer);
+    comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); }, 1500);
+
+    send(q.body, { level: q.level, quiet: true });
+  });
   $("quick").appendChild(b);
 });
 
