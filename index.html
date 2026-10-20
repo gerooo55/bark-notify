@@ -128,6 +128,19 @@
                  width: 34px; height: 34px; }
   .year span { font-weight: 700; min-width: 70px; text-align: center; }
 
+  .sent-box { margin-top: 14px; }
+  .sent-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--sub); }
+  .sent-head button { background: none; color: var(--sub); font-size: 18px; padding: 0 4px; }
+  .sent-box .pv { margin-top: 8px; }
+  .pv small { display: block; color: var(--sub); font-size: 12px; }
+  .pv .st { font-weight: 600; }
+  .pv.ng { opacity: .6; }
+  .hist { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.5; }
+  .hist:last-child { border-bottom: none; }
+  .hist .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+  .hist .tt { font-weight: 700; }
+  .hist .bd { white-space: pre-line; color: var(--text); }
+  .hist .n { color: var(--accent); font-weight: 700; margin-left: 4px; }
   .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
   .weather-send { width: 100%; padding: 14px 8px; display: flex; align-items: center; justify-content: center;
                   gap: 8px; font-size: 16px; font-weight: 600; background: var(--bg); color: var(--text);
@@ -283,7 +296,9 @@
             <li><b>合計</b>と、<b>絵文字ごとの回数</b></li>
             <li><b>月ごとのグラフ</b>（‹ › で年を切りかえ、棒を押すと内訳）</li>
             <li><b>年月ごとの一覧</b>（年月を押すとグラフにジャンプ）</li>
+            <li><b>送った履歴</b>（いつ・誰に・何を送ったか。連打は「×5」のようにまとまります）</li>
           </ul>
+          <p>友達から<b>もらった</b>通知の履歴は、Bark アプリの中で見られます。</p>
           <p>回数は、送るのに成功したぶんだけ数えます。</p>
         </div>
       </details>
@@ -447,6 +462,12 @@
       <p class="hint">年月を押すと、その月のグラフを表示します。</p>
     </div>
     <div class="card">
+      <h2>📨 送った履歴</h2>
+      <div id="historyList"></div>
+      <button class="sub-btn" id="historyMore" style="width:100%;margin-top:10px" hidden>もっと見る</button>
+      <p class="hint">この端末から送ったものを、新しい順に最大300件まで残します。もらった通知の履歴は Bark アプリで見られます。</p>
+    </div>
+    <div class="card">
       <h2>💾 バックアップ</h2>
       <p class="hint" id="backupInfo"></p>
       <button class="send" id="exportBtn" style="margin-top:4px">書き出し（ファイルに保存）</button>
@@ -480,6 +501,7 @@
       <button class="weather-send" id="diceSend"></button>
       <button class="weather-send" id="wordSend"></button>
     </div>
+    <div class="sent-box" id="sentBox" hidden></div>
   </div>
 
   <div class="card">
@@ -618,7 +640,7 @@ function parseKey(input) {
 // 天気まわりの処理は weather.js（GitHub Actions と共通）。使うときに読み込む
 let weatherMod;
 // weather.js を直したら WEATHER_JS_VERSION も変える（iPhone が古い weather.js をキャッシュで使い続けないように）
-const WEATHER_JS_VERSION = "2026-10-20c";
+const WEATHER_JS_VERSION = "2026-10-20d";
 const W = () => (weatherMod ||= import(`./weather.js?v=${WEATHER_JS_VERSION}`));
 
 // 友達の地域（天気用）
@@ -765,22 +787,69 @@ async function sendOne(f, title, body, opts = {}) {
     const data = await res.json().catch(() => ({}));
     if (res.ok && (data.code === undefined || data.code === 200)) {
       addLog(opts.logAs || title);
+      addHistory(f, { title, subtitle: opts.subtitle, body });
       return true;
     }
   } catch {}
   return false;
 }
 
+// ---- 送った履歴（この端末に最新300件まで）----
+// ログ画面では新しい順に30件ずつ表示
+let historyShown = 30;
+function renderHistory() {
+  const h = store.get("history", []);
+  const fmt = t => {
+    const d = new Date(t), now = new Date();
+    const hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    return d.toDateString() === now.toDateString() ? `今日 ${hm}` : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+  };
+  $("historyList").innerHTML = h.length ? h.slice(0, historyShown).map(x => `
+    <div class="hist">
+      <div class="meta"><span>→ ${esc(x.to)}</span><span>${fmt(x.t)}</span></div>
+      <div class="tt">${esc(x.title)}${x.n > 1 ? `<span class="n">×${x.n}</span>` : ""}</div>
+      ${x.subtitle ? `<div>${esc(x.subtitle)}</div>` : ""}
+      ${x.body ? `<div class="bd">${esc(x.body)}</div>` : ""}
+    </div>`).join("") : `<p class="hint">まだ送った履歴がありません</p>`;
+  $("historyMore").hidden = h.length <= historyShown;
+}
+$("historyMore").onclick = () => { historyShown += 30; renderHistory(); };
+
+// 連打で同じ相手に同じ内容を続けて送ったときは1件にまとめて「×回数」にする
+const HISTORY_MAX = 300;
+function addHistory(f, msg) {
+  const h = store.get("history", []);
+  // 複数人に連打すると相手が交互に並ぶので、直近5秒以内の中から同じものを探す
+  const same = h.find(x => Date.now() - x.t < 5000 && x.to === f.name && x.title === msg.title
+    && (x.subtitle || "") === (msg.subtitle || "") && (x.body || "") === (msg.body || ""));
+  if (same) { same.n = (same.n || 1) + 1; same.t = Date.now(); }
+  else h.unshift({ t: Date.now(), to: f.name, title: msg.title, subtitle: msg.subtitle || "", body: msg.body || "" });
+  store.set("history", h.slice(0, HISTORY_MAX));
+}
+
 // 選んでいる全員に送る。make(f) で1人ずつ中身を作れる（占いなどを人ごとに変える用）
-// 前の送信を待たずに即送る。結果の件数を返す
+// 前の送信を待たずに即送る。結果と、誰に何を送ったか（items）を返す
 async function sendAll(list, make) {
-  const results = await Promise.all(list.map(f => {
-    const m = make(f);
-    return m ? sendOne(f, m.title, m.body, m.opts) : Promise.resolve(false);
-  }));
+  const msgs = list.map(f => make(f));
+  const results = await Promise.all(list.map((f, i) =>
+    msgs[i] ? sendOne(f, msgs[i].title, msgs[i].body, msgs[i].opts) : Promise.resolve(false)));
   const ok = list.filter((_, i) => results[i]);
   const ng = list.filter((_, i) => !results[i]);
-  return { ok, ng, total: list.length };
+  const items = list.map((f, i) => ({ f, ok: results[i], title: msgs[i]?.title || "", subtitle: msgs[i]?.opts?.subtitle || "", body: msgs[i]?.body || "" }));
+  return { ok, ng, total: list.length, items };
+}
+
+// 「送った内容」をボタンの下に表示（次に送るまで残す）
+const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function showSent(items) {
+  $("sentBox").hidden = false;
+  $("sentBox").innerHTML = `<div class="sent-head">送った内容<button id="sentClose" aria-label="閉じる">×</button></div>` +
+    // 本文の改行をそのまま見せる（pre-line）ので、タグの間に余計な改行を入れない
+    items.map(it => `<div class="pv${it.ok ? "" : " ng"}"><div>`
+      + `<small>${it.ok ? "→" : "❌"} ${esc(it.f.name)}${it.note ? "（" + esc(it.note) + "）" : ""}</small>`
+      + `<b>${esc(it.title)}</b>${it.subtitle ? `<b class="st">${esc(it.subtitle)}</b>` : ""}${esc(it.body)}`
+      + `</div></div>`).join("");
+  $("sentClose").onclick = () => { $("sentBox").hidden = true; };
 }
 
 // 送信結果のお知らせ（全員成功 / 一部失敗）
@@ -844,15 +913,22 @@ $("weatherSend").onclick = async () => {
     const s = await weatherSettings();
     const server = store.get("server", "") || undefined;
     // 天気は人ごとに地域がちがうので、1人ずつ予報を取って送る
-    const results = await Promise.all(withPlace.map(async f => {
+    const items = await Promise.all(withPlace.map(async f => {
+      const it = { f, ok: false, title: "🌤 天気予報", subtitle: "", body: "" };
       try {
         const fc = await m.fetchForecast(f.place.lat, f.place.lon);
-        if (!(await m.sendBark(f.key, m.buildMessage(s, f, fc, here("")), server))) return false;
-        addLog(WEATHER_LOG);
-        return true;
-      } catch { return false; }
+        const msg = m.buildMessage(s, f, fc, here(""));
+        Object.assign(it, { title: msg.title, subtitle: msg.subtitle, body: msg.body });
+        if (await m.sendBark(f.key, msg, server)) {
+          it.ok = true;
+          addLog(WEATHER_LOG);
+          addHistory(f, msg);
+        }
+      } catch {}
+      return it;
     }));
-    const r = { ok: withPlace.filter((_, i) => results[i]), ng: withPlace.filter((_, i) => !results[i]) };
+    showSent([...items, ...noPlace.map(f => ({ f, ok: false, title: "🌤 天気予報", note: "地域が未登録" }))]);
+    const r = { ok: items.filter(i => i.ok).map(i => i.f), ng: items.filter(i => !i.ok).map(i => i.f) };
     if (r.ng.length) toast(`${names(r.ng)} への天気予報の送信に失敗しました`, false);
     else if (noPlace.length) toast(`${names(r.ok)} に送りました（${names(noPlace)} は地域が未登録）`, true);
     else toastResult(r, "天気予報を");
@@ -883,11 +959,13 @@ $("luckySend").onclick = async () => {
   haptic();
   // 通知でパッと見えるのは「タイトル・サブタイトル・本文2行」なので、アイテムをサブタイトルにする
   // 占いの結果は1人ずつちがうものにする
-  toastResult(await sendAll(list, () => ({
+  const r = await sendAll(list, () => ({
     title: "🔮 今日のラッキーアイテム",
     body: `🎨 ラッキーカラー：${rand(LUCKY_COLORS)}\n${rand(LUCKY_LUCK)}`,
     opts: { subtitle: rand(LUCKY_ITEMS), logAs: LUCKY_LOG },
-  })), "占いを");
+  }));
+  showSent(r.items);
+  toastResult(r, "占いを");
 };
 
 // ---- サイコロ ----
@@ -905,17 +983,43 @@ $("diceSend").onclick = async () => {
     const n = rolls.get(f.key);
     return { title: "🎲 サイコロ", body: `${DICE_FACES[n - 1]} ${n} が出たよ！`, opts: { logAs: DICE_LOG } };
   });
+  showSent(r.items);
   if (r.ng.length) return toastResult(r);
   toast("🎲 " + r.ok.map(f => list.length > 1 ? `${f.name}:${rolls.get(f.key)}` : `${rolls.get(f.key)} を ${f.name} に送りました ✓`).join("  "), true);
 };
 
 // ---- ランダムワード ----
 const WORD_LOG = "💬";
-const DEFAULT_WORDS = [
-  { title: "💪 がんばれ", bodies: ["今日もえらい！", "無理しすぎないでね", "応援してるよ〜"] },
-  { title: "🍽 今日のごはん", bodies: ["カレー", "オムライス", "おすし", "パスタ", "からあげ"] },
-];
-const getWords = () => store.get("words", DEFAULT_WORDS);
+const getWords = () => store.get("words", []);
+
+// 以前は天気のコメントとランダムワードに例文が最初から入っていたので、
+// 書き換えずに残っている例文だけを1回だけ消す（自分で書いたものは残す）
+(function removeOldSamples() {
+  if (store.get("samplesRemoved", false)) return;
+  const OLD_WEATHER = {
+    sunny: ["いい天気だね！洗濯日和だよ", "お日さまが出てるよ〜"],
+    cloudy: ["今日はくもりだよ", "どんより空だけど元気にいこ"],
+    rain: ["傘を忘れないでね☂️", "雨だから足元気をつけてね"],
+    snow: ["雪だよ！滑らないようにね", "あったかくしてね⛄"],
+    hot: ["暑くなりそう！水分とってね", "熱中症に気をつけてね"],
+    cold: ["寒いから上着を持ってね", "あったかくして出かけてね"],
+    mild: ["過ごしやすい気温だよ", "ちょうどいい気温だね"],
+    pressure: ["気圧が下がりそう…無理しないでね", "頭痛に気をつけてね"],
+  };
+  const OLD_WORDS = [
+    { title: "💪 がんばれ", bodies: ["今日もえらい！", "無理しすぎないでね", "応援してるよ〜"] },
+    { title: "🍽 今日のごはん", bodies: ["カレー", "オムライス", "おすし", "パスタ", "からあげ"] },
+  ];
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const w = store.get("weather", null);
+  if (w?.comments) {
+    Object.keys(OLD_WEATHER).forEach(k => { if (same(w.comments[k], OLD_WEATHER[k])) w.comments[k] = []; });
+    store.set("weather", w);
+  }
+  const words = store.get("words", null);
+  if (words) store.set("words", words.filter(g => !OLD_WORDS.some(o => same({ title: g.title, bodies: g.bodies }, o))));
+  store.set("samplesRemoved", true);
+})();
 $("wordSend").innerHTML = `${emo(WORD_LOG)}ランダム`;
 $("wordSend").onclick = async () => {
   const list = needTargets();
@@ -924,10 +1028,12 @@ $("wordSend").onclick = async () => {
   if (!groups.length) return toast("「💬 ランダム」タブで本文を登録してね", false);
   haptic();
   // ワードも1人ずつランダムに選ぶ
-  toastResult(await sendAll(list, () => {
+  const r = await sendAll(list, () => {
     const g = rand(groups);
     return { title: g.title || "💬", body: rand(g.bodies), opts: { logAs: WORD_LOG } };
-  }), "ワードを");
+  });
+  showSent(r.items);
+  toastResult(r, "ワードを");
 };
 
 // ワード設定画面。入力するたびに自動保存
@@ -1054,7 +1160,7 @@ async function renderWeather() {
 
   $("wComments").innerHTML = COMMENT_TYPES.map(t => `
     <label>${t.label}</label>
-    <textarea data-type="${t.key}" rows="2">${(s.comments[t.key] || []).join("\n").replace(/</g, "&lt;")}</textarea>`).join("");
+    <textarea data-type="${t.key}" rows="2" placeholder="1行に1つずつ書いてね（空なら何も付きません）">${(s.comments[t.key] || []).join("\n").replace(/</g, "&lt;")}</textarea>`).join("");
 
   $("ghRepo").value = store.get("ghRepo", "") || guessRepo();
   $("ghToken").value = store.get("ghToken", "");
@@ -1287,6 +1393,8 @@ function renderLog() {
   });
 
   renderChart(log);
+  historyShown = 30;
+  renderHistory();
   renderBackupInfo();
 }
 let showMonth = () => {};
@@ -1348,7 +1456,7 @@ function renderChart(log) {
 
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
-const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words"];
+const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1412,6 +1520,10 @@ $("importFile").onchange = async e => {
     const words = getWords();
     (d.words || []).forEach(g => { if (!words.some(w => w.title === g.title)) words.push(g); });
     store.set("words", words);
+    // 送った履歴は、重複を除いて新しい順に並べ直す
+    const hist = store.get("history", []);
+    (d.history || []).forEach(x => { if (!hist.some(y => y.t === x.t && y.to === x.to)) hist.push(x); });
+    store.set("history", hist.sort((a, b) => b.t - a.t).slice(0, HISTORY_MAX));
   }
 
   friends = store.get("friends", []);
