@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bark 通知ボタン</title>
+<style>
+  :root {
+    --bg: #f5f5f7; --card: #fff; --text: #1d1d1f; --sub: #6e6e73;
+    --accent: #ff5a36; --border: #e0e0e5; --ok: #2e9e5b; --ng: #d93a3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111; --card: #1c1c1e; --text: #f5f5f7; --sub: #a1a1a6; --border: #333; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 4px 0 16px; }
+  h2 { font-size: 15px; color: var(--sub); margin: 0 0 10px; font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+          padding: 16px; margin-bottom: 16px; }
+  input, select { width: 100%; padding: 10px 12px; font-size: 16px; border-radius: 10px;
+          border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  label { font-size: 13px; color: var(--sub); display: block; margin: 10px 0 4px; }
+  button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .friends { display: flex; flex-wrap: wrap; gap: 8px; }
+  .friend { padding: 8px 14px; border: 1px solid var(--border); background: var(--bg);
+            color: var(--text); border-radius: 999px; }
+  .friend.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .quick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .quick button { padding: 18px 8px; font-size: 17px; background: var(--accent); color: #fff; font-weight: 600; }
+  .quick button:active, .send:active { transform: scale(.97); }
+  .send { width: 100%; padding: 14px; margin-top: 12px; background: var(--text); color: var(--bg); font-weight: 600; }
+  .sub-btn { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .del { color: var(--ng); }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+           padding: 10px 18px; border-radius: 999px; color: #fff; font-size: 14px;
+           opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  .hint { font-size: 12px; color: var(--sub); line-height: 1.6; }
+  details summary { cursor: pointer; color: var(--sub); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔔 Bark 通知ボタン</h1>
+
+  <div class="card">
+    <h2>送る相手</h2>
+    <div class="friends" id="friends"></div>
+    <p class="hint" id="noFriend">まだ友達がいません。下の「友達を追加」から登録してね。</p>
+  </div>
+
+  <div class="card">
+    <h2>ワンタップ通知</h2>
+    <div class="quick" id="quick"></div>
+  </div>
+
+  <div class="card">
+    <h2>自由メッセージ</h2>
+    <input id="msg" placeholder="メッセージを入力" maxlength="200">
+    <div class="row">
+      <div>
+        <label>音</label>
+        <select id="sound">
+          <option value="">デフォルト</option>
+          <option value="alarm">alarm</option>
+          <option value="bell">bell</option>
+          <option value="birdsong">birdsong</option>
+          <option value="calypso">calypso</option>
+          <option value="glass">glass</option>
+          <option value="minuet">minuet</option>
+          <option value="shake">shake</option>
+        </select>
+      </div>
+      <div>
+        <label>重要度</label>
+        <select id="level">
+          <option value="active">通常</option>
+          <option value="timeSensitive">至急（集中モード貫通）</option>
+          <option value="passive">静か</option>
+        </select>
+      </div>
+    </div>
+    <button class="send" id="sendBtn">送信</button>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>⚙️ 設定（自分の名前・友達を追加）</summary>
+      <label>自分の名前（通知のタイトルに出ます）</label>
+      <input id="myName" placeholder="例: たろう">
+
+      <label>友達の名前</label>
+      <input id="fName" placeholder="例: はなこ">
+      <label>友達の Bark キー（またはBarkアプリに出るURLをそのまま貼り付け）</label>
+      <input id="fKey" placeholder="https://api.day.app/xxxxxxxx/...">
+      <button class="sub-btn" id="addBtn" style="width:100%;margin-top:10px">友達を追加</button>
+      <button class="sub-btn del" id="delBtn" style="width:100%;margin-top:8px">選択中の友達を削除</button>
+
+      <label>Bark サーバー（自前サーバーの人だけ変更）</label>
+      <input id="server" placeholder="https://api.day.app">
+      <p class="hint">
+        データ（名前・キー）はこのブラウザ内にだけ保存されます。<br>
+        Barkキーを知っている人は誰でもその端末に通知を送れるので、信頼できる友達とだけ交換してね。
+      </p>
+    </details>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+const QUICK = [
+  { label: "👋 やっほー", body: "やっほー！" },
+  { label: "📞 電話して", body: "電話してほしい！", level: "timeSensitive" },
+  { label: "🍜 ごはん行こ", body: "ごはん行かない？" },
+  { label: "🎮 ゲームしよ", body: "ゲームしよう！" },
+  { label: "🏠 着いた", body: "着いたよ" },
+  { label: "😴 おやすみ", body: "おやすみ〜", level: "passive" },
+];
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+let friends = store.get("friends", []);
+let selected = store.get("selected", 0);
+const $ = id => document.getElementById(id);
+
+$("myName").value = store.get("myName", "");
+$("server").value = store.get("server", "");
+$("myName").oninput = e => store.set("myName", e.target.value.trim());
+$("server").oninput = e => store.set("server", e.target.value.trim());
+
+function renderFriends() {
+  const box = $("friends");
+  box.innerHTML = "";
+  friends.forEach((f, i) => {
+    const b = document.createElement("button");
+    b.className = "friend" + (i === selected ? " on" : "");
+    b.textContent = f.name;
+    b.onclick = () => { selected = i; store.set("selected", i); renderFriends(); };
+    box.appendChild(b);
+  });
+  $("noFriend").style.display = friends.length ? "none" : "block";
+}
+
+// URLを貼られてもキー部分だけ取り出す
+function parseKey(input) {
+  const s = input.trim();
+  const m = s.match(/^https?:\/\/[^/]+\/([^/?#]+)/);
+  return m ? m[1] : s;
+}
+
+$("addBtn").onclick = () => {
+  const name = $("fName").value.trim();
+  const key = parseKey($("fKey").value);
+  if (!name || !key) return toast("名前とキーを入力してね", false);
+  friends.push({ name, key });
+  selected = friends.length - 1;
+  store.set("friends", friends); store.set("selected", selected);
+  $("fName").value = ""; $("fKey").value = "";
+  renderFriends();
+  toast(name + " を追加しました", true);
+};
+
+$("delBtn").onclick = () => {
+  const f = friends[selected];
+  if (!f || !confirm(f.name + " を削除しますか？")) return;
+  friends.splice(selected, 1);
+  selected = 0;
+  store.set("friends", friends); store.set("selected", selected);
+  renderFriends();
+};
+
+async function send(body, opts = {}) {
+  const f = friends[selected];
+  if (!f) return toast("先に友達を追加してね", false);
+  const me = store.get("myName", "") || "だれか";
+  const server = (store.get("server", "") || "https://api.day.app").replace(/\/+$/, "");
+  const params = new URLSearchParams({ group: "友達通知" });
+  if (opts.sound) params.set("sound", opts.sound);
+  if (opts.level) params.set("level", opts.level);
+  const url = `${server}/${encodeURIComponent(f.key)}/${encodeURIComponent(me + " から")}/${encodeURIComponent(body)}?${params}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && (data.code === undefined || data.code === 200)) toast(f.name + " に送信しました ✓", true);
+    else toast("送信失敗: " + (data.message || res.status), false);
+  } catch {
+    // CORSで結果が読めない場合でも送信自体は届くので no-cors で再送
+    try { await fetch(url, { mode: "no-cors" }); toast(f.name + " に送信しました（確認不可）", true); }
+    catch { toast("通信エラー", false); }
+  }
+}
+
+QUICK.forEach(q => {
+  const b = document.createElement("button");
+  b.textContent = q.label;
+  b.onclick = () => send(q.body, { level: q.level });
+  $("quick").appendChild(b);
+});
+
+$("sendBtn").onclick = () => {
+  const body = $("msg").value.trim();
+  if (!body) return toast("メッセージを入力してね", false);
+  send(body, { sound: $("sound").value, level: $("level").value });
+  $("msg").value = "";
+};
+$("msg").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("sendBtn").click(); });
+
+let tt;
+function toast(text, ok) {
+  const t = $("toast");
+  t.textContent = text;
+  t.style.background = ok ? "var(--ok)" : "var(--ng)";
+  t.classList.add("show");
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+renderFriends();
+</script>
+</body>
+</html>
