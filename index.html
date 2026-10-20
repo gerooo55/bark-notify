@@ -112,6 +112,12 @@
   .send { width: 100%; padding: 14px; margin-top: 12px; background: var(--text); color: var(--bg); font-weight: 600; }
   .sub-btn { padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
   .del { color: var(--ng); }
+  /* 送信成功は右下に小さくチェックだけ出す */
+  #check { position: fixed; right: 16px; bottom: 20px; z-index: 35; width: 34px; height: 34px; border-radius: 50%;
+           background: var(--ok); color: #fff; font-size: 18px; font-weight: 900; display: flex; align-items: center;
+           justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.2); opacity: 0; pointer-events: none;
+           transform: scale(.5); transition: opacity .15s, transform .2s cubic-bezier(.2,1.6,.4,1); }
+  #check.show { opacity: 1; transform: scale(1); }
   #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
            padding: 10px 18px; border-radius: 999px; color: #fff; font-size: 14px;
            opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -299,6 +305,7 @@
             <li>上の<b>絵文字ボタンを押す</b>だけ！</li>
           </ol>
           <p>押した回数だけ通知が届くので、<b>連打もOK</b>。ボタンの右上に「×3」のように回数が出ます。</p>
+          <p>送れたら、画面の右下に緑の <b>✓</b> が一瞬出ます。送れなかったときだけ、下に赤いメッセージが出ます。</p>
           <p>絵文字ごとに通知の音がちがうので、いろいろ押して聞きくらべてみてね。</p>
           <div class="tip-box">💡 相手には、通知のタイトルに絵文字だけが届きます。誰から来たかは、事前に「この絵文字は私」と決めておくと楽しいよ。</div>
         </div>
@@ -310,7 +317,7 @@
           <ul>
             <li><b>🌤 天気予報</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
             <li><b>🔮 占い</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
-            <li><b>🎲 チンチロ</b><br>サイコロ3つを振って、役が届きます。役が出なければ3回まで振り直し。2人以上に送ると、いちばん強い人をあなたの画面で発表します。<br>
+            <li><b>🎲 チンチロ</b><br>サイコロ3つを振って、役が届きます。役が出なければ3回まで振り直し。2人以上に送ると、「送った内容」でいちばん強い人に 👑 が付きます。<br>
               <small>強い順：👑 ピンゾロ（1・1・1）＞ 🎰 ゾロ目 ＞ 🎉 シゴロ（4・5・6）＞ 目（2つそろって残りの数。6が最強）＞ 💨 目なし ＞ 💀 ヒフミ（1・2・3）</small></li>
             <li><b>💬 ランダム</b><br>「💬 ランダム」タブで作った言葉の中から、ランダムに1つ届きます。</li>
             <li><b>🔀 アナグラム</b><br>いちばん下の入力欄に言葉を入れて、左の 🔀 ボタンを押すと、文字がバラバラに並びかわって届きます（例：青いベンチ → いチ青ベン）。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。</li>
@@ -596,7 +603,6 @@
     </div>
   </div>
   <div class="card">
-    <h2>ワンタップ通知</h2>
     <div class="quick" id="quick"></div>
     <div class="extra-grid">
       <button class="weather-send" id="weatherSend"></button>
@@ -651,6 +657,7 @@
   </section>
 </main>
 <div id="toast"></div>
+<div id="check" aria-label="送信しました">✓</div>
 
 <script>
 // 通知のタイトルは絵文字だけ。label はボタンの読み上げ用、sound は Bark の通知音
@@ -969,7 +976,7 @@ function showSent(items) {
 
 // 送信結果のお知らせ（全員成功 / 一部失敗）
 function toastResult(r, what = "") {
-  if (!r.ng.length) toast(`${names(r.ok)} に${what}送りました ✓`, true);
+  if (!r.ng.length) checkPop();
   else toast(`${names(r.ng)} への送信に失敗（キーが間違ってるかも）`, false);
 }
 
@@ -1053,7 +1060,7 @@ $("weatherSend").onclick = async () => {
     if (items.some(i => i.ok)) onSent("weather", { recipients: items.filter(i => i.ok).length });
     const r = { ok: items.filter(i => i.ok).map(i => i.f), ng: items.filter(i => !i.ok).map(i => i.f) };
     if (r.ng.length) toast(`${names(r.ng)} への天気予報の送信に失敗しました`, false);
-    else if (noPlace.length) toast(`${names(r.ok)} に送りました（${names(noPlace)} は地域が未登録）`, true);
+    else if (noPlace.length) toast(`${names(noPlace)} は地域が未登録なので送れませんでした`, false);
     else toastResult(r, "天気予報を");
   } finally {
     b.disabled = false;
@@ -1144,13 +1151,14 @@ $("diceSend").onclick = async () => {
       opts: { subtitle: `${faces}${h.tries > 1 ? `（${h.tries}投目）` : ""}`, logAs: DICE_LOG },
     };
   });
+  // 2人以上なら、いちばん強い人に「送った内容」で 👑 を付ける
+  if (r.ok.length > 1) {
+    const best = Math.max(...r.ok.map(f => rolls.get(f.key).rank));
+    r.items.forEach(it => { if (it.ok && rolls.get(it.f.key).rank === best) it.note = "👑 勝ち"; });
+  }
   showSent(r.items);
   if (r.ok.length) onSent("dice", { recipients: r.ok.length, hands: r.ok.map(f => rolls.get(f.key)) });
-  if (r.ng.length) return toastResult(r);
-  if (list.length === 1) return toast(`🎲 ${rolls.get(list[0].key).label} を ${list[0].name} に送りました ✓`, true);
-  const best = Math.max(...r.ok.map(f => rolls.get(f.key).rank));
-  const winners = r.ok.filter(f => rolls.get(f.key).rank === best);
-  toast(`🎲 ${r.ok.map(f => `${f.name}:${rolls.get(f.key).label}`).join(" ")} → 👑${names(winners)}`, true);
+  toastResult(r);
 };
 
 // ---- ランダムワード ----
@@ -1213,7 +1221,7 @@ $("anagramSend").onclick = async () => {
   }
   if (r.ok.length) onSent("anagram", { recipients: r.ok.length, match: hits.length > 0 && chars.length >= 3 });
   if (r.ng.length) return toastResult(r);
-  toast(hits.length ? `🎉 元どおりに揃った！（${names(hits)}）` : `🔀 ${list.length === 1 ? shuffled.get(list[0].key) + " を" : ""}${names(r.ok)} に送りました ✓`, true);
+  checkPop();
 };
 
 // 以前は天気のコメントとランダムワードに例文が最初から入っていたので、
@@ -1319,7 +1327,8 @@ QUICK.forEach(q => {
   let combo = 0, comboTimer, expected = 0, sent = 0, done = 0;
   const report = () => {
     if (combo > 0 || done === 0 || done < expected) return;
-    toast(`${done}件中 ${sent}件 送信成功`, sent === done);
+    if (sent === done) checkPop();
+    else toast(`${done}件中 ${done - sent}件 送れませんでした（キーが間違ってるかも）`, false);
     expected = sent = done = 0;
   };
 
@@ -2227,6 +2236,14 @@ function toast(text, ok) {
   t.style.background = ok ? "var(--ok)" : "var(--ng)";
   t.classList.add("show");
   clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// 送信成功のしるし（右下に ✓ を一瞬だけ）
+let ct;
+function checkPop() {
+  const c = $("check");
+  c.classList.remove("show"); void c.offsetWidth; c.classList.add("show");
+  clearTimeout(ct); ct = setTimeout(() => c.classList.remove("show"), 900);
 }
 
 renderFriends();
