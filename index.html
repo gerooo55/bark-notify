@@ -128,7 +128,8 @@
                  width: 34px; height: 34px; }
   .year span { font-weight: 700; min-width: 70px; text-align: center; }
 
-  .weather-send { width: 100%; margin-top: 12px; padding: 12px; display: flex; align-items: center; justify-content: center;
+  .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+  .weather-send { width: 100%; padding: 14px 8px; display: flex; align-items: center; justify-content: center;
                   gap: 8px; font-size: 16px; font-weight: 600; background: var(--bg); color: var(--text);
                   border: 1px solid var(--border); border-radius: 18px; transition: transform .08s; }
   .weather-send:active { transform: scale(.97); }
@@ -227,10 +228,10 @@
         <summary>🎁 ④ いろいろ送るボタン</summary>
         <div class="body">
           <ul>
-            <li><b>🌤 天気予報を送る</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
-            <li><b>🔮 ラッキーアイテム占いを送る</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
-            <li><b>🎲 サイコロを送る</b><br>1〜6のどれかが届きます。出た目はあなたの画面にも出るので、勝負にも使えるよ。</li>
-            <li><b>💬 ランダムワードを送る</b><br>「💬 ワード」タブで作った言葉の中から、ランダムに1つ届きます。</li>
+            <li><b>🌤 天気予報</b><br>相手の地域の今日の天気・気温・降水確率と、ひとことコメントが届きます。（友達の地域の登録が必要）</li>
+            <li><b>🔮 占い</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
+            <li><b>🎲 サイコロ</b><br>1〜6のどれかが届きます。出た目はあなたの画面にも出るので、勝負にも使えるよ。</li>
+            <li><b>💬 ランダム</b><br>「💬 ワード」タブで作った言葉の中から、ランダムに1つ届きます。</li>
           </ul>
         </div>
       </details>
@@ -340,7 +341,7 @@
   <section id="pageWords" hidden>
     <div class="card">
       <h2>ランダムワード</h2>
-      <p class="hint">「ランダムワードを送る」を押すと、下のタイトルから1つ、そのタイトルの本文から1行がランダムに選ばれて届きます。<br>
+      <p class="hint">「送る」画面の「💬 ランダム」を押すと、下のタイトルから1つ、そのタイトルの本文から1行がランダムに選ばれて届きます。<br>
         本文は1行に1つずつ書いてね。入力した内容は自動で保存されます。</p>
     </div>
     <div id="wordGroups"></div>
@@ -472,10 +473,12 @@
   <div class="card">
     <h2>ワンタップ通知</h2>
     <div class="quick" id="quick"></div>
-    <button class="weather-send" id="weatherSend"></button>
-    <button class="weather-send" id="luckySend"></button>
-    <button class="weather-send" id="diceSend"></button>
-    <button class="weather-send" id="wordSend"></button>
+    <div class="extra-grid">
+      <button class="weather-send" id="weatherSend"></button>
+      <button class="weather-send" id="luckySend"></button>
+      <button class="weather-send" id="diceSend"></button>
+      <button class="weather-send" id="wordSend"></button>
+    </div>
   </div>
 
   <div class="card">
@@ -772,7 +775,7 @@ function burst(btn, emoji) {
 
 // 選んでいる友達に、今日の天気予報をすぐ送る（中身は毎朝の天気通知と同じ）
 const WEATHER_LOG = "🌤";
-$("weatherSend").innerHTML = `${emo(WEATHER_LOG)}天気予報を送る`;
+$("weatherSend").innerHTML = `${emo(WEATHER_LOG)}天気予報`;
 $("weatherSend").onclick = async () => {
   const f = friends[selected];
   if (!f) return toast("先に友達を追加してね", false);
@@ -809,7 +812,7 @@ const LUCKY_COLORS = ["あか", "オレンジ", "きいろ", "ミントグリー
   "しろ", "くろ", "ベージュ", "ゴールド", "シルバー", "ラベンダー", "ブラウン"];
 const LUCKY_LUCK = ["★★★★★ 最高の一日！", "★★★★☆ いい感じ！", "★★★☆☆ まずまず", "★★☆☆☆ のんびりいこう",
   "★☆☆☆☆ 無理せずにね"];
-$("luckySend").innerHTML = `${emo(LUCKY_LOG)}ラッキーアイテム占いを送る`;
+$("luckySend").innerHTML = `${emo(LUCKY_LOG)}占い`;
 $("luckySend").onclick = () => {
   if (!friends[selected]) return toast("先に友達を追加してね", false);
   haptic();
@@ -821,7 +824,7 @@ $("luckySend").onclick = () => {
 // ---- サイコロ ----
 const DICE_LOG = "🎲";
 const DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-$("diceSend").innerHTML = `${emo(DICE_LOG)}サイコロを送る`;
+$("diceSend").innerHTML = `${emo(DICE_LOG)}サイコロ`;
 $("diceSend").onclick = async () => {
   const f = friends[selected];
   if (!f) return toast("先に友達を追加してね", false);
@@ -840,7 +843,7 @@ const DEFAULT_WORDS = [
   { title: "🍽 今日のごはん", bodies: ["カレー", "オムライス", "おすし", "パスタ", "からあげ"] },
 ];
 const getWords = () => store.get("words", DEFAULT_WORDS);
-$("wordSend").innerHTML = `${emo(WORD_LOG)}ランダムワードを送る`;
+$("wordSend").innerHTML = `${emo(WORD_LOG)}ランダム`;
 $("wordSend").onclick = () => {
   if (!friends[selected]) return toast("先に友達を追加してね", false);
   const groups = getWords().filter(g => g.bodies.length);
