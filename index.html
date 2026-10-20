@@ -89,6 +89,9 @@
   th { color: var(--sub); font-weight: 600; font-size: 12px; }
   td.num, th.num { text-align: right; }
   td.mix { color: var(--sub); font-size: 13px; }
+  tr.ym { cursor: pointer; }
+  tr.ym:active, tr.ym:hover { background: var(--bg); }
+  .banner { border-color: var(--accent); font-weight: 600; }
   .year { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px; }
   .year button { background: var(--bg); color: var(--text); border: 1px solid var(--border);
                  width: 34px; height: 34px; }
@@ -128,12 +131,33 @@
         <thead><tr><th>年月</th><th>内訳</th><th class="num">回数</th></tr></thead>
         <tbody id="logTable"></tbody>
       </table>
-      <p class="hint">ログはこの端末のブラウザにだけ保存されます。</p>
+      <p class="hint">年月を押すと、その月のグラフを表示します。</p>
+    </div>
+    <div class="card">
+      <h2>💾 バックアップ</h2>
+      <p class="hint" id="backupInfo"></p>
+      <button class="send" id="exportBtn" style="margin-top:4px">書き出し（ファイルに保存）</button>
+      <div class="row" style="margin-top:8px">
+        <button class="sub-btn" id="importOverwrite">読み込み（上書き）</button>
+        <button class="sub-btn" id="importMerge">読み込み（合算）</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <p class="hint">
+        ログ・友達・設定をまとめて1つのファイルにします。「"ファイル"に保存」→ iCloud Drive に置いておくと安心。<br>
+        上書き：バックアップの時点に丸ごと戻す　／　合算：今のログに回数を足す（友達も追加）
+      </p>
       <button class="sub-btn del" id="logReset" style="width:100%;margin-top:4px">ログをリセット</button>
     </div>
   </section>
 
   <section id="pageSend">
+  <div class="card banner" id="backupBanner" hidden>
+    <div>🔔 1週間バックアップしてないよ</div>
+    <div class="row" style="margin-top:10px">
+      <button class="sub-btn" id="bannerLater">あとで</button>
+      <button class="send" id="bannerNow" style="margin-top:0">今すぐバックアップ</button>
+    </div>
+  </div>
   <div class="card">
     <h2>送る相手</h2>
     <div class="friends" id="friends"></div>
@@ -207,14 +231,14 @@
 <div id="toast"></div>
 
 <script>
-// 通知のタイトルは絵文字だけ。label はボタンの読み上げ用
+// 通知のタイトルは絵文字だけ。label はボタンの読み上げ用、sound は Bark の通知音
 const QUICK = [
-  { emoji: "👋", label: "やっほー" },
-  { emoji: "📞", label: "電話して", level: "timeSensitive" },
-  { emoji: "🍜", label: "ごはん行こ" },
-  { emoji: "🎮", label: "ゲームしよ" },
-  { emoji: "🏠", label: "着いた" },
-  { emoji: "😴", label: "おやすみ", level: "passive" },
+  { emoji: "🐦", label: "鳥", sound: "birdsong" },
+  { emoji: "📞", label: "電話", sound: "shake" },
+  { emoji: "🔔", label: "ベル", sound: "chime" },
+  { emoji: "🚂", label: "汽車", sound: "choo" },
+  { emoji: "🤖", label: "ロボット", sound: "healthnotification" },
+  { emoji: "🚀", label: "ロケット", sound: "mailsent" },
 ];
 
 const store = {
@@ -387,7 +411,7 @@ QUICK.forEach(q => {
     clearTimeout(comboTimer);
     comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    send(q.emoji, "", { level: q.level, quiet: true }).then(ok => {
+    send(q.emoji, "", { sound: q.sound, level: q.level, quiet: true }).then(ok => {
       done++; if (ok) sent++;
       report();
     });
@@ -415,7 +439,14 @@ document.querySelectorAll(".tabs button").forEach(t => {
 });
 
 // ---- ログ画面 ----
-const ORDER = [...QUICK.map(q => q.emoji), FREE];
+// 今のボタンの絵文字 → 以前使っていた絵文字（ログに残っている分）→ 自由メッセージ の順
+let ORDER = [];
+function updateOrder(log) {
+  const old = new Set();
+  Object.values(log).forEach(o => Object.keys(o).forEach(e => old.add(e)));
+  const cur = QUICK.map(q => q.emoji);
+  ORDER = [...cur, ...[...old].filter(e => !cur.includes(e) && e !== FREE), FREE];
+}
 let viewYear = new Date().getFullYear();
 $("yPrev").onclick = () => { viewYear--; renderLog(); };
 $("yNext").onclick = () => { viewYear++; renderLog(); };
@@ -430,6 +461,7 @@ const mix = o => ORDER.filter(e => o && o[e]).map(e => `${e}${o[e]}`).join("  ")
 function renderLog() {
   const log = store.get("log", {});
   const months = Object.keys(log).sort().reverse();
+  updateOrder(log);
 
   // 合計と絵文字ごとの累計
   const totals = {};
@@ -443,12 +475,22 @@ function renderLog() {
   $("logTable").innerHTML = months.length
     ? months.map(m => {
         const [y, mo] = m.split("-");
-        return `<tr><td>${y}年${+mo}月</td><td class="mix">${mix(log[m])}</td><td class="num">${sum(log[m]).toLocaleString()}</td></tr>`;
+        return `<tr class="ym" data-y="${y}" data-m="${+mo}"><td>${y}年${+mo}月</td><td class="mix">${mix(log[m])}</td><td class="num">${sum(log[m]).toLocaleString()}</td></tr>`;
       }).join("")
     : `<tr><td colspan="3" class="mix">まだ記録がありません</td></tr>`;
 
+  // 一覧の年月を押すと、その年のグラフに切り替えてその月を表示
+  $("logTable").querySelectorAll(".ym").forEach(tr => tr.onclick = () => {
+    viewYear = +tr.dataset.y;
+    renderChart(log);
+    $("logChart").closest(".card").scrollIntoView({ behavior: "smooth", block: "center" });
+    showMonth(+tr.dataset.m - 1);
+  });
+
   renderChart(log);
+  renderBackupInfo();
 }
+let showMonth = () => {};
 
 // 選んだ年の1〜12月を棒グラフで表示。タップ/ホバーで内訳を出す
 function renderChart(log) {
@@ -487,7 +529,8 @@ function renderChart(log) {
   box.querySelector("svg")?.remove();
   box.insertAdjacentHTML("afterbegin", svg);
   const tip = $("tip");
-  const show = i => {
+  tip.style.display = "none";
+  const show = showMonth = i => {
     const d = data[i];
     box.querySelectorAll(".bar").forEach(b => b.classList.toggle("on", +b.dataset.i === i));
     tip.innerHTML = `<b>${viewYear}年${d.m}月　${d.n}回</b>${d.n ? "<br>" + mix(d.o) : ""}`;
@@ -504,6 +547,99 @@ function renderChart(log) {
   });
 }
 
+// ---- バックアップ ----
+const BACKUP_KEYS = ["log", "friends", "selected", "myName", "icon", "server"];
+const DAY = 24 * 60 * 60 * 1000;
+const today = () => new Date().toISOString().slice(0, 10);
+
+async function exportBackup() {
+  const data = {};
+  BACKUP_KEYS.forEach(k => { const v = store.get(k, undefined); if (v !== undefined) data[k] = v; });
+  const json = JSON.stringify({ app: "bark-notify", version: 1, exportedAt: new Date().toISOString(), data }, null, 2);
+  const name = `bark-backup-${today()}.json`;
+  const file = new File([json], name, { type: "application/json" });
+
+  try {
+    // iPhone は共有メニューから「"ファイル"に保存」できる
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file] });
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(file);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+  } catch (e) {
+    if (e.name === "AbortError") return toast("キャンセルしました", false); // 共有メニューを閉じた
+    return toast("書き出しに失敗しました", false);
+  }
+  store.set("lastBackup", Date.now());
+  store.set("snoozeUntil", 0);
+  renderBackupInfo();
+  $("backupBanner").hidden = true;
+  toast("バックアップしました ✓", true);
+}
+
+let importMode = "overwrite";
+$("exportBtn").onclick = exportBackup;
+$("importOverwrite").onclick = () => { importMode = "overwrite"; $("importFile").click(); };
+$("importMerge").onclick = () => { importMode = "merge"; $("importFile").click(); };
+$("importFile").onchange = async e => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let backup;
+  try { backup = JSON.parse(await file.text()); } catch { return toast("ファイルが読めませんでした", false); }
+  if (backup?.app !== "bark-notify" || !backup.data) return toast("このアプリのバックアップではありません", false);
+  const d = backup.data;
+
+  if (importMode === "overwrite") {
+    if (!confirm(`${String(backup.exportedAt || "").slice(0, 10)} のバックアップに戻します。今のデータは上書きされます。よろしい？`)) return;
+    BACKUP_KEYS.forEach(k => { if (k in d) store.set(k, d[k]); });
+  } else {
+    // ログは回数を足し、友達はキーが重複しないものだけ追加
+    const log = store.get("log", {});
+    Object.entries(d.log || {}).forEach(([m, o]) => {
+      log[m] = log[m] || {};
+      Object.entries(o).forEach(([em, n]) => log[m][em] = (log[m][em] || 0) + n);
+    });
+    store.set("log", log);
+    const fr = store.get("friends", []);
+    (d.friends || []).forEach(f => { if (!fr.some(x => x.key === f.key)) fr.push(f); });
+    store.set("friends", fr);
+  }
+
+  friends = store.get("friends", []);
+  selected = Math.min(store.get("selected", 0), Math.max(friends.length - 1, 0));
+  $("myName").value = store.get("myName", "");
+  $("server").value = store.get("server", "");
+  $("icon").value = store.get("icon", "emoji");
+  renderFriends();
+  renderLog();
+  toast(importMode === "overwrite" ? "バックアップから戻しました ✓" : "合算しました ✓", true);
+};
+
+function renderBackupInfo() {
+  const last = store.get("lastBackup", 0);
+  $("backupInfo").textContent = last
+    ? `前回のバックアップ：${new Date(last).toLocaleDateString("ja-JP")}（${Math.floor((Date.now() - last) / DAY)}日前）`
+    : "まだバックアップしていません";
+}
+
+// 前回から7日以上たっていたら、開いたときにお知らせ
+function checkBackupReminder() {
+  const hasLog = Object.keys(store.get("log", {})).length > 0;
+  const last = store.get("lastBackup", 0);
+  const snooze = store.get("snoozeUntil", 0);
+  $("backupBanner").hidden = !(hasLog && Date.now() - last >= 7 * DAY && Date.now() >= snooze);
+}
+$("bannerNow").onclick = exportBackup;
+$("bannerLater").onclick = () => {
+  store.set("snoozeUntil", Date.now() + DAY); // 1日後にまた出す
+  $("backupBanner").hidden = true;
+};
+
 let tt;
 function toast(text, ok) {
   const t = $("toast");
@@ -514,6 +650,7 @@ function toast(text, ok) {
 }
 
 renderFriends();
+checkBackupReminder();
 </script>
 </body>
 </html>
