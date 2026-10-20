@@ -1,0 +1,43 @@
+name: 毎朝の天気通知
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"   # 30分ごとに確認（送るかどうかはスクリプトが判断）
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "時刻に関係なく今すぐ送る"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency: weather
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 天気予報を送る
+        env:
+          WEATHER_CONFIG: ${{ vars.WEATHER_CONFIG }}
+          FORCE: ${{ inputs.force || 'false' }}
+        run: node scripts/send-weather.mjs
+
+      - name: 送信記録を保存
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain weather-state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add weather-state.json
+            git commit -m "天気通知の送信記録"
+            git push
+          fi
