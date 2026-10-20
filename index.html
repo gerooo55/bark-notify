@@ -98,14 +98,35 @@
   tr.ym { cursor: pointer; }
   tr.ym:active, tr.ym:hover { background: var(--bg); }
   .banner { border-color: var(--accent); font-weight: 600; }
-  .season-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .season-grid figure { margin: 0; text-align: center; font-size: 11px; color: var(--sub); line-height: 1.3; }
-  .season-grid img { width: 100%; aspect-ratio: 1; border-radius: 22%; display: block; margin-bottom: 3px; }
-  .season-grid figure.now img { outline: 3px solid var(--accent); outline-offset: 2px; }
   .year { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px; }
   .year button { background: var(--bg); color: var(--text); border: 1px solid var(--border);
                  width: 34px; height: 34px; }
   .year span { font-weight: 700; min-width: 70px; text-align: center; }
+
+  /* 天気 */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+                font-size: 16px; color: var(--text); margin: 0; }
+  input.switch { appearance: none; -webkit-appearance: none; width: 51px; height: 31px; padding: 0;
+                 border-radius: 999px; background: var(--border); position: relative; flex: none;
+                 transition: background .2s; border: none; cursor: pointer; }
+  input.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px;
+                        border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: left .2s; }
+  input.switch:checked { background: var(--ok); }
+  input.switch:checked::after { left: 22px; }
+  textarea { width: 100%; padding: 8px 10px; font: inherit; font-size: 15px; border-radius: 10px; resize: vertical;
+             border: 1px solid var(--border); background: var(--bg); color: var(--text); min-height: 62px; }
+  .check { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; }
+  .check input { width: 20px; height: 20px; }
+  .check small { color: var(--sub); }
+  .places button { display: block; width: 100%; text-align: left; padding: 8px 10px; margin-top: 6px;
+                   background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .places small { color: var(--sub); margin-left: 6px; }
+  .pv { display: flex; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+        padding: 10px; margin-top: 10px; font-size: 14px; }
+  .pv img { width: 38px; height: 38px; border-radius: 9px; flex: none; }
+  .pv b { display: block; }
+  .pv div { white-space: pre-line; line-height: 1.5; }
+  #wComments label { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -115,7 +136,82 @@
   <div class="tabs">
     <button class="on" data-page="pageSend">送る</button>
     <button data-page="pageLog">📊 ログ</button>
+    <button data-page="pageWeather">☀️ 天気</button>
   </div>
+
+  <section id="pageWeather" hidden>
+    <div class="card">
+      <h2>毎朝の天気通知</h2>
+      <label class="switch-row">
+        <span>天気通知を送る</span>
+        <input type="checkbox" id="wEnabled" class="switch">
+      </label>
+      <p class="hint" id="wStatus"></p>
+      <div class="row">
+        <div>
+          <label>送る時刻（日本時間）</label>
+          <select id="wHour"></select>
+        </div>
+        <div>
+          <label>送る日</label>
+          <select id="wRainOnly">
+            <option value="false">毎日</option>
+            <option value="true">雨・雪の日だけ</option>
+          </select>
+        </div>
+      </div>
+      <label>送る相手（地域を登録した友達だけ選べます）</label>
+      <div id="wRecipients"></div>
+      <p class="hint">GitHub の仕組みで動くので、送られる時刻は数分〜30分ほどずれることがあります。</p>
+    </div>
+
+    <div class="card">
+      <h2>コメント</h2>
+      <p class="hint">1行に1つずつ書くと、その中からランダムに1つ選ばれます。<br>
+        {name} は友達の名前、{max} は最高気温、{min} は最低気温に置き換わります。</p>
+      <div id="wComments"></div>
+      <div class="row">
+        <div>
+          <label>暑い（最高気温 ℃以上）</label>
+          <input id="wHot" type="number" inputmode="numeric">
+        </div>
+        <div>
+          <label>寒い（最高気温 ℃以下）</label>
+          <input id="wCold" type="number" inputmode="numeric">
+        </div>
+        <div>
+          <label>気圧（hPa 下がる）</label>
+          <input id="wDrop" type="number" inputmode="decimal" step="0.5">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>プレビュー・テスト</h2>
+      <div class="row">
+        <button class="sub-btn" id="wPreview">プレビュー</button>
+        <button class="sub-btn" id="wTest">今すぐテスト送信</button>
+      </div>
+      <div id="wPreviewOut"></div>
+      <button class="send" id="wSave">保存して GitHub に反映</button>
+      <label class="switch-row" style="margin-top:14px">
+        <span>ワンタップ通知に相手の天気を添える</span>
+        <input type="checkbox" id="wAttach" class="switch">
+      </label>
+    </div>
+
+    <div class="card">
+      <details id="ghDetails">
+        <summary>🔑 GitHub 連携の設定</summary>
+        <label>リポジトリ（ユーザー名/リポジトリ名）</label>
+        <input id="ghRepo" placeholder="username/bark-notify">
+        <label>アクセストークン</label>
+        <input id="ghToken" type="password" autocomplete="off" placeholder="github_pat_...">
+        <button class="sub-btn" id="ghLoad" style="width:100%;margin-top:10px">接続して GitHub の設定を読み込む</button>
+        <p class="hint">トークンはこの端末にだけ保存され、バックアップファイルには入りません。</p>
+      </details>
+    </div>
+  </section>
 
   <section id="pageLog" hidden>
     <div class="card">
@@ -219,23 +315,19 @@
       <input id="fName" placeholder="例: はなこ">
       <label>友達の Bark キー（またはBarkアプリに出るURLをそのまま貼り付け）</label>
       <input id="fKey" placeholder="https://api.day.app/xxxxxxxx/...">
+      <label>住んでいる地域（天気用・なくてもOK）</label>
+      <div class="row">
+        <input id="fPlaceQ" placeholder="例: 渋谷、大阪市、札幌" style="flex:3">
+        <button class="sub-btn" id="placeSearch" style="flex:1">検索</button>
+      </div>
+      <div class="places" id="placeResults"></div>
+      <p class="hint" id="placeChosen"></p>
       <button class="sub-btn" id="addBtn" style="width:100%;margin-top:10px">友達を追加</button>
       <div class="row" style="margin-top:8px">
         <button class="sub-btn" id="editBtn">選択中の友達を編集</button>
         <button class="sub-btn del" id="delBtn">選択中の友達を削除</button>
       </div>
 
-      <label>通知のアイコン</label>
-      <select id="icon">
-        <option value="season">🍁 季節のアイコン（月・イベントで変わる）</option>
-        <option value="emoji">💬 吹き出しの絵文字</option>
-        <option value="fa">Font Awesome の comments アイコン</option>
-        <option value="none">Bark のアイコン（変更しない）</option>
-      </select>
-      <div id="seasonPreview" hidden>
-        <p class="hint" id="seasonNow" style="margin:10px 0 6px"></p>
-        <div class="season-grid" id="seasonGrid"></div>
-      </div>
 
       <label>Bark サーバー（自前サーバーの人だけ変更）</label>
       <input id="server" placeholder="https://api.day.app">
@@ -310,6 +402,34 @@ function parseKey(input) {
   return m ? m[1] : s;
 }
 
+// 天気まわりの処理は weather.js（GitHub Actions と共通）。使うときに読み込む
+let weatherMod;
+const W = () => (weatherMod ||= import("./weather.js"));
+
+// 友達の地域（天気用）
+let formPlace = null;
+function setFormPlace(p) {
+  formPlace = p;
+  $("placeChosen").textContent = p ? `📍 ${p.name}（${p.detail}）` : "";
+  $("placeResults").innerHTML = "";
+}
+$("placeSearch").onclick = async () => {
+  const q = $("fPlaceQ").value.trim();
+  if (!q) return toast("地域名を入力してね", false);
+  try {
+    const list = await (await W()).searchPlace(q);
+    if (!list.length) return toast("見つかりませんでした", false);
+    $("placeResults").innerHTML = "";
+    list.forEach(p => {
+      const b = document.createElement("button");
+      b.innerHTML = `${p.name}<small>${p.detail}</small>`;
+      b.onclick = () => { setFormPlace(p); $("fPlaceQ").value = ""; };
+      $("placeResults").appendChild(b);
+    });
+  } catch { toast("検索に失敗しました", false); }
+};
+$("fPlaceQ").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("placeSearch").click(); });
+
 // editing が null なら「追加」、番号が入っていればその友達を「編集中」
 let editing = null;
 function setEditing(i) {
@@ -317,6 +437,8 @@ function setEditing(i) {
   const f = i === null ? null : friends[i];
   $("fName").value = f ? f.name : "";
   $("fKey").value = f ? f.key : "";
+  $("fPlaceQ").value = "";
+  setFormPlace(f?.place || null);
   $("addBtn").textContent = f ? "変更を保存" : "友達を追加";
   $("editBtn").textContent = f ? "キャンセル" : "選択中の友達を編集";
   $("editNote").hidden = !f;
@@ -327,11 +449,13 @@ $("addBtn").onclick = () => {
   const name = $("fName").value.trim();
   const key = parseKey($("fKey").value);
   if (!name || !key) return toast("名前とキーを入力してね", false);
+  const f = { name, key };
+  if (formPlace) f.place = formPlace;
   if (editing !== null) {
-    friends[editing] = { name, key };
+    friends[editing] = f;
     selected = editing;
   } else {
-    friends.push({ name, key });
+    friends.push(f);
     selected = friends.length - 1;
   }
   store.set("friends", friends); store.set("selected", selected);
@@ -383,35 +507,7 @@ function seasonIcon(d = new Date()) {
   return { icon, name: `${d.getMonth() + 1}月（${name}）` };
 }
 
-function iconUrl() {
-  switch (store.get("icon", "emoji")) {
-    case "season": return here(`icons/${seasonIcon().icon}.png`);
-    case "emoji": return "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f4ac.png"; // 💬
-    case "fa": return here("comments.png"); // Font Awesome fa-regular fa-comments
-    default: return "";
-  }
-}
-
-// 設定画面で、季節アイコンの一覧と今使われるアイコンを見せる
-function renderSeasonPreview() {
-  const on = $("icon").value === "season";
-  $("seasonPreview").hidden = !on;
-  if (!on) return;
-  const now = seasonIcon();
-  $("seasonNow").textContent = `今日のアイコン：${now.name}`;
-  const fmt = s => s.replace(/^0/, "").replace("-0", "/").replace("-", "/");
-  const items = [
-    ...SEASON_MONTHS.map(([icon, name], i) => ({ icon, label: `${i + 1}月<br>${name}` })),
-    ...SEASON_EVENTS.map(e => ({ icon: e.icon, label: `${e.name}<br>${fmt(e.from)}${e.from === e.to ? "" : "〜" + fmt(e.to)}` })),
-  ];
-  $("seasonGrid").innerHTML = items.map(it =>
-    `<figure class="${it.icon === now.icon ? "now" : ""}"><img src="icons/${it.icon}.png" alt=""><figcaption>${it.label}</figcaption></figure>`
-  ).join("");
-}
-
-$("icon").value = store.get("icon", "emoji");
-$("icon").onchange = e => { store.set("icon", e.target.value); renderSeasonPreview(); };
-renderSeasonPreview();
+const iconUrl = () => here(`icons/${seasonIcon().icon}.png`);
 
 // ログは「年月 → 絵文字 → 回数」で集計して保存（件数が増えても容量を食わない）
 const FREE = "✏️";
@@ -492,6 +588,23 @@ function burst(btn, emoji) {
   }
 }
 
+// ワンタップ通知に添える相手の地域の今の天気（例: 🌤 22℃ 渋谷）。連打用に10分キャッシュ
+const nowCache = {};
+async function tapWeather(f) {
+  if (!f?.place || store.get("weather", {}).attachOnTap === false) return "";
+  const k = `${f.place.lat},${f.place.lon}`;
+  if (!nowCache[k] || Date.now() - nowCache[k].t > 10 * 60 * 1000) {
+    nowCache[k] = { t: Date.now(), p: W().then(m => m.fetchCurrent(f.place.lat, f.place.lon)) };
+  }
+  try {
+    const c = await nowCache[k].p;
+    return `${c.emoji} ${c.temp}℃ ${f.place.name}`;
+  } catch {
+    delete nowCache[k];
+    return "";
+  }
+}
+
 QUICK.forEach(q => {
   const b = document.createElement("button");
   b.setAttribute("aria-label", q.label);
@@ -519,7 +632,9 @@ QUICK.forEach(q => {
     clearTimeout(comboTimer);
     comboTimer = setTimeout(() => { combo = 0; badge.classList.remove("show"); report(); }, 1500);
 
-    send(q.emoji, "", { sound: q.sound, level: q.level, quiet: true }).then(ok => {
+    tapWeather(friends[selected])
+      .then(body => send(q.emoji, body, { sound: q.sound, level: q.level, quiet: true }))
+      .then(ok => {
       done++; if (ok) sent++;
       report();
     });
@@ -540,11 +655,229 @@ $("msg").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isCompos
 document.querySelectorAll(".tabs button").forEach(t => {
   t.onclick = () => {
     document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === t));
-    $("pageSend").hidden = t.dataset.page !== "pageSend";
-    $("pageLog").hidden = t.dataset.page !== "pageLog";
+    ["pageSend", "pageLog", "pageWeather"].forEach(p => $(p).hidden = t.dataset.page !== p);
     if (t.dataset.page === "pageLog") renderLog();
+    if (t.dataset.page === "pageWeather") renderWeather();
   };
 });
+
+// ---- 天気画面 ----
+// 設定はこの端末（localStorage の "weather"）に持ち、「保存」で GitHub の Actions 変数 WEATHER_CONFIG に書き込む。
+// GitHub Actions（.github/workflows/weather.yml）がその変数を読んで毎朝送る。
+const WF_FILE = "weather.yml";
+for (let h = 0; h < 24; h++) $("wHour").insertAdjacentHTML("beforeend", `<option value="${h}">${h}:00</option>`);
+
+async function weatherSettings() {
+  const { DEFAULT_WEATHER_SETTINGS: D } = await W();
+  const s = store.get("weather", {});
+  return { ...D, attachOnTap: true, recipients: [], ...s, comments: { ...D.comments, ...(s.comments || {}) } };
+}
+
+async function renderWeather() {
+  const { COMMENT_TYPES } = await W();
+  const s = await weatherSettings();
+  $("wEnabled").checked = s.enabled;
+  $("wHour").value = s.hour;
+  $("wRainOnly").value = String(s.rainOnly);
+  $("wHot").value = s.hot;
+  $("wCold").value = s.cold;
+  $("wDrop").value = s.pressureDrop;
+  $("wAttach").checked = s.attachOnTap;
+
+  $("wRecipients").innerHTML = friends.length ? friends.map((f, i) => `
+    <label class="check">
+      <input type="checkbox" data-key="${f.key}" ${f.place ? "" : "disabled"} ${f.place && s.recipients.includes(f.key) ? "checked" : ""}>
+      ${f.name} <small>${f.place ? "📍" + f.place.name : "（地域が未登録。⚙️設定の編集から登録してね）"}</small>
+    </label>`).join("") : `<p class="hint">まだ友達がいません</p>`;
+
+  $("wComments").innerHTML = COMMENT_TYPES.map(t => `
+    <label>${t.label}</label>
+    <textarea data-type="${t.key}" rows="2">${(s.comments[t.key] || []).join("\n").replace(/</g, "&lt;")}</textarea>`).join("");
+
+  $("ghRepo").value = store.get("ghRepo", "") || guessRepo();
+  $("ghToken").value = store.get("ghToken", "");
+  $("ghDetails").open = !store.get("ghToken", "");
+  renderWeatherStatus();
+}
+
+// 画面の入力内容 → 設定
+async function readWeatherForm() {
+  const s = await weatherSettings();
+  const num = (id, d) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : d; };
+  const comments = {};
+  document.querySelectorAll("#wComments textarea").forEach(t => {
+    comments[t.dataset.type] = t.value.split("\n").map(x => x.trim()).filter(Boolean);
+  });
+  const next = {
+    ...s,
+    enabled: $("wEnabled").checked,
+    hour: +$("wHour").value,
+    rainOnly: $("wRainOnly").value === "true",
+    hot: num("wHot", s.hot),
+    cold: num("wCold", s.cold),
+    pressureDrop: num("wDrop", s.pressureDrop),
+    attachOnTap: $("wAttach").checked,
+    recipients: [...document.querySelectorAll("#wRecipients input:checked")].map(i => i.dataset.key),
+    comments,
+  };
+  store.set("weather", next);
+  return next;
+}
+
+// 送る相手（地域が登録されている友達のうち、チェックした人）
+const weatherRecipients = s => friends
+  .filter(f => f.place && s.recipients.includes(f.key))
+  .map(f => ({ name: f.name, key: f.key, place: { name: f.place.name, lat: f.place.lat, lon: f.place.lon } }));
+
+function renderWeatherStatus(extra) {
+  const s = store.get("weather", {});
+  const saved = store.get("weatherSavedAt", 0);
+  const lines = [];
+  if (!store.get("ghToken", "")) lines.push("⚠️ 下の「GitHub 連携の設定」が必要です");
+  else if (saved) lines.push(`GitHub に保存済み：${new Date(saved).toLocaleString("ja-JP")}`);
+  if (s.enabled) lines.push(`毎朝 ${s.hour}:00 ごろに ${weatherRecipients({ recipients: [], ...s }).length}人へ送ります`);
+  if (extra) lines.push(extra);
+  $("wStatus").innerHTML = lines.join("<br>");
+}
+
+// GitHub Pages の URL（ユーザー名.github.io/リポジトリ名/）からリポジトリ名を推測
+function guessRepo() {
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  const repo = location.pathname.split("/").filter(Boolean)[0];
+  return m && repo ? `${m[1]}/${repo}` : "";
+}
+
+async function gh(path, opts = {}) {
+  const repo = store.get("ghRepo", ""), token = store.get("ghToken", "");
+  if (!repo || !token) throw new Error("GitHub 連携の設定がまだです");
+  const res = await fetch(`https://api.github.com/repos/${repo}${path}`, {
+    ...opts,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(opts.body ? { "Content-Type": "application/json" } : {}),
+    },
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(res.status === 401 ? "トークンが正しくないか期限切れです"
+      : res.status === 403 ? "トークンの権限が足りません（Variables と Actions の Read and write）"
+      : `GitHub エラー（${res.status}）`);
+  }
+  return res;
+}
+
+async function saveWeatherToGitHub() {
+  const s = await readWeatherForm();
+  const config = {
+    enabled: s.enabled, hour: s.hour, rainOnly: s.rainOnly,
+    hot: s.hot, cold: s.cold, pressureDrop: s.pressureDrop, comments: s.comments,
+    server: store.get("server", "") || undefined,
+    recipients: weatherRecipients(s),
+  };
+  const value = JSON.stringify(config);
+  let res = await gh(`/actions/variables/WEATHER_CONFIG`, { method: "PATCH", body: JSON.stringify({ name: "WEATHER_CONFIG", value }) });
+  if (res.status === 404) {
+    res = await gh(`/actions/variables`, { method: "POST", body: JSON.stringify({ name: "WEATHER_CONFIG", value }) });
+    if (res.status === 404) throw new Error("リポジトリが見つかりません（名前を確認してね）");
+  }
+  // 長いあいだ動きがないと GitHub が自動実行を止めてしまうので、オンにするたびに有効化しておく
+  if (s.enabled) {
+    const r = await gh(`/actions/workflows/${WF_FILE}/enable`, { method: "PUT" });
+    if (r.status === 404) throw new Error("設定は保存したけど、.github/workflows/weather.yml が見つかりません");
+  }
+  store.set("weatherSavedAt", Date.now());
+  renderWeatherStatus();
+}
+
+async function saveWithToast(okText) {
+  try {
+    await saveWeatherToGitHub();
+    toast(okText, true);
+    return null;
+  } catch (e) {
+    renderWeatherStatus("❌ " + e.message);
+    toast(e.message, false);
+    return e.message;
+  }
+}
+
+$("wSave").onclick = () => saveWithToast("GitHub に保存しました ✓");
+$("wEnabled").onchange = async () => {
+  const on = $("wEnabled").checked;
+  const err = await saveWithToast(on ? "天気通知をオンにしました ✓" : "天気通知をオフにしました");
+  if (!err) return;
+  // GitHub に反映できなかったらスイッチを元に戻す
+  $("wEnabled").checked = !on;
+  await readWeatherForm();
+  renderWeatherStatus("❌ " + err);
+};
+$("wAttach").onchange = () => { readWeatherForm(); };
+
+$("ghRepo").onchange = e => store.set("ghRepo", e.target.value.trim().replace(/^https:\/\/github\.com\//, "").replace(/\/$/, ""));
+$("ghToken").onchange = e => store.set("ghToken", e.target.value.trim());
+
+// GitHub に保存されている設定を読み込む（機種変更やデータが消えたとき用）
+$("ghLoad").onclick = async () => {
+  $("ghRepo").onchange({ target: $("ghRepo") });
+  $("ghToken").onchange({ target: $("ghToken") });
+  try {
+    const res = await gh(`/actions/variables/WEATHER_CONFIG`);
+    if (res.status === 404) {
+      const repoRes = await gh("");
+      if (repoRes.status === 404) throw new Error("リポジトリが見つかりません（名前を確認してね）");
+      toast("接続OK！まだ GitHub に設定がないので、保存すると作られます", true);
+    } else {
+      const config = JSON.parse((await res.json()).value);
+      const { recipients = [], server, ...rest } = config;
+      const s = await weatherSettings();
+      store.set("weather", { ...s, ...rest, recipients: recipients.map(r => r.key) });
+      // この端末にいない友達は追加しておく
+      recipients.forEach(r => { if (!friends.some(f => f.key === r.key)) friends.push({ name: r.name, key: r.key, place: r.place }); });
+      store.set("friends", friends);
+      renderFriends();
+      store.set("weatherSavedAt", Date.now());
+      toast("GitHub から設定を読み込みました ✓", true);
+    }
+    $("ghDetails").open = false;
+    renderWeather();
+  } catch (e) {
+    toast(e.message, false);
+  }
+};
+
+// プレビュー・テスト送信（このブラウザから直接）
+async function buildWeatherMessages() {
+  const m = await W();
+  const s = await readWeatherForm();
+  const list = weatherRecipients(s);
+  if (!list.length) throw new Error("送る相手を選んでね");
+  return Promise.all(list.map(async r => {
+    const fc = await m.fetchForecast(r.place.lat, r.place.lon);
+    return { r, fc, msg: m.buildMessage(s, r, fc, here("")) };
+  }));
+}
+
+$("wPreview").onclick = async () => {
+  try {
+    const items = await buildWeatherMessages();
+    $("wPreviewOut").innerHTML = items.map(({ r, msg }) => `
+      <div class="pv"><img src="${msg.icon}" alt="">
+        <div><b>${msg.title.replace(/</g, "&lt;")}</b>${msg.body.replace(/</g, "&lt;")}<br><small style="color:var(--sub)">→ ${r.name}</small></div>
+      </div>`).join("");
+  } catch (e) { toast(e.message, false); }
+};
+
+$("wTest").onclick = async () => {
+  try {
+    const items = await buildWeatherMessages();
+    if (!confirm(`${items.map(i => i.r.name).join("、")} に今すぐ天気予報を送ります。いい？`)) return;
+    const m = await W();
+    const server = store.get("server", "") || undefined;
+    const ok = (await Promise.all(items.map(i => m.sendBark(i.r.key, i.msg, server)))).filter(Boolean).length;
+    toast(`${items.length}人中 ${ok}人に送信しました`, ok === items.length);
+  } catch (e) { toast(e.message, false); }
+};
 
 // ---- ログ画面 ----
 // 今のボタンの絵文字 → 以前使っていた絵文字（ログに残っている分）→ 自由メッセージ の順
@@ -656,7 +989,8 @@ function renderChart(log) {
 }
 
 // ---- バックアップ ----
-const BACKUP_KEYS = ["log", "friends", "selected", "myName", "icon", "server"];
+// ghToken（GitHub のトークン）は安全のためバックアップに入れない
+const BACKUP_KEYS = ["log", "friends", "selected", "myName", "server", "weather", "ghRepo"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -722,8 +1056,6 @@ $("importFile").onchange = async e => {
   selected = Math.min(store.get("selected", 0), Math.max(friends.length - 1, 0));
   $("myName").value = store.get("myName", "");
   $("server").value = store.get("server", "");
-  $("icon").value = store.get("icon", "emoji");
-  renderSeasonPreview();
   setEditing(null);
   renderFriends();
   renderLog();
