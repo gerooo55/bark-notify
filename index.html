@@ -1194,9 +1194,9 @@ $("callSend").onclick = async () => {
   haptic();
   pop($("callSend"), CALL_LOG);
   const r = await sendAll(list, () => ({
-    title: "🚨 呼び出し！",
-    body: "気づいたら連絡してね！",
-    opts: { level: "critical", volume: 5, sound: "alarm", logAs: CALL_LOG },
+    title: CALL_LOG, // ワンタップ通知と同じく絵文字だけ
+    body: "",
+    opts: { level: "critical", volume: 5, sound: "minuet", logAs: CALL_LOG },
   }));
   showSent(r.items);
   toastResult(r);
