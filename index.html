@@ -135,6 +135,10 @@
   .tabs button { flex: 1; padding: 9px 2px; background: none; color: var(--sub); font-weight: 600; font-size: 14px; white-space: nowrap; }
   .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 16px; }
   .header h1 { margin: 0; }
+  .header-btns { display: flex; gap: 6px; flex: none; }
+  .reload-btn { padding: 7px 10px; }
+  .reload-btn.spin { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .help-btn { flex: none; padding: 7px 12px; font-size: 13px; font-weight: 600; color: var(--sub);
               background: var(--card); border: 1px solid var(--border); border-radius: 999px; }
   .help-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -263,7 +267,10 @@
 <main>
   <div class="header">
     <h1>🔔 呼び出し君</h1>
-    <button class="help-btn" data-page="pageHelp">📖 使い方</button>
+    <div class="header-btns">
+      <button class="help-btn reload-btn" id="reloadBtn" aria-label="最新の状態に更新">🔄</button>
+      <button class="help-btn" data-page="pageHelp">📖 使い方</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -436,6 +443,8 @@
             <li><span class="tag">ホーム画面に追加</span> を選ぶ（名前は「呼び出し君」、ベルのアイコンになります）</li>
           </ol>
           <p>アプリみたいにすぐ開けるようになります。</p>
+          <p>ホーム画面から開いたときは、下に引っぱっても更新できません。新しくなったページを読み込みたいときは、タイトルの横の <span class="tag">🔄</span> を押してね。</p>
+          <div class="tip-box">📱 ホーム画面から開いたページと、Safari で開いたページは、データ（友達・ログ・バッジなど）が<b>別々</b>に保存されます。移したいときは、バックアップの書き出し → 読み込みを使ってね。</div>
           <div class="tip-box">💾 Safari は「7日以上開かなかったサイト」のデータを消すことがあります。ときどき開いて、バックアップもしておくと安心です。</div>
         </div>
       </details>
@@ -1475,7 +1484,19 @@ QUICK.forEach(q => {
 
 // ---- タブ ----
 // 使い方はタイトル横のボタンから開く（タブと同じ切り替え方）
-const pageButtons = document.querySelectorAll(".tabs button, .help-btn");
+const pageButtons = document.querySelectorAll(".tabs button, .help-btn[data-page]");
+
+// 🔄 更新：ホーム画面から開いたときは下に引っぱって更新できないので、ボタンで最新を読み込み直す
+// iPhone が覚えている古いファイルを使わないよう、サーバーから取り直してから再読み込みする
+$("reloadBtn").onclick = async () => {
+  $("reloadBtn").classList.add("spin");
+  try {
+    await Promise.all(["./", "./index.html", `./weather.js?v=${WEATHER_JS_VERSION}`, "./apple-touch-icon.png"]
+      .map(u => fetch(u, { cache: "reload" }).catch(() => {})));
+  } finally {
+    location.reload();
+  }
+};
 pageButtons.forEach(t => {
   t.onclick = () => {
     pageButtons.forEach(x => x.classList.toggle("on", x === t));
