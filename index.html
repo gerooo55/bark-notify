@@ -136,6 +136,55 @@
   .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 16px; }
   .header h1 { margin: 0; }
   .header-btns { display: flex; gap: 6px; flex: none; }
+  .coin-btn { font-variant-numeric: tabular-nums; color: var(--text); }
+  @media (max-width: 390px) { .help-label { display: none; } }
+  .coin-pop { position: fixed; z-index: 36; pointer-events: none; font-weight: 800; font-size: 14px; color: #e0a100; }
+
+  /* ガチャ */
+  .g-wallet { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .g-wallet b { font-size: 34px; font-variant-numeric: tabular-nums; margin: 0 4px; }
+  .g-coin { font-size: 26px; }
+  .g-wallet small { color: var(--sub); }
+  .g-sub { color: var(--sub); font-size: 14px; }
+  .g-sub b { font-size: 18px; color: var(--text); }
+  .g-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .g-btns .send { margin-top: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; }
+  .g-btns .send small { font-size: 11px; font-weight: 500; opacity: .75; }
+  .g-btns .g-ten { background: linear-gradient(135deg, #ff5a36, #ffb627); color: #fff; }
+  .g-btns .send:disabled { opacity: .35; }
+  #gResult { margin-top: 12px; }
+  .g-capsule { font-size: 64px; text-align: center; animation: capsule .7s ease-in-out; }
+  @keyframes capsule { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-18deg); } 40% { transform: rotate(16deg); }
+                       60% { transform: rotate(-10deg); } 80% { transform: rotate(6deg) scale(1.1); } }
+  .g-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .g-cards.one { grid-template-columns: 1fr; max-width: 160px; margin: 0 auto; }
+  .g-card { position: relative; border-radius: 12px; padding: 6px 2px 4px; text-align: center; font-size: 10px; line-height: 1.25;
+            background: var(--bg); border: 2px solid var(--border); animation: popin .35s cubic-bezier(.2,1.4,.4,1) both; }
+  .g-cards.one .g-card { font-size: 14px; padding: 12px 6px 10px; }
+  .g-card img { width: 80%; aspect-ratio: 1; display: block; margin: 0 auto 2px; }
+  .g-card .gr { font-weight: 900; font-size: 10px; }
+  .g-card .new { position: absolute; top: -6px; right: -4px; background: var(--ng); color: #fff; font-size: 9px; font-weight: 800;
+                 border-radius: 999px; padding: 1px 5px; }
+  .r-N { border-color: var(--border); } .r-N .gr { color: var(--sub); }
+  .r-R { border-color: #4f9cf5; } .r-R .gr { color: #4f9cf5; }
+  .r-SR { border-color: #a066f0; background: color-mix(in srgb, #a066f0 10%, var(--bg)); } .r-SR .gr { color: #a066f0; }
+  .r-SSR { border-color: #f0b400; background: color-mix(in srgb, #ffd54a 22%, var(--bg)); box-shadow: 0 0 12px rgba(240,180,0,.5); }
+  .r-SSR .gr { color: #e09b00; }
+  .r-X { border-color: transparent; background: linear-gradient(var(--bg), var(--bg)) padding-box,
+         linear-gradient(135deg, #ff5a8a, #ffb627, #4fd1a5, #4f9cf5, #a066f0) border-box; box-shadow: 0 0 16px rgba(160,102,240,.5); }
+  .r-X .gr { background: linear-gradient(90deg, #ff5a8a, #4f9cf5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .z-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-bottom: 14px; }
+  .z-tile { position: relative; border-radius: 12px; padding: 6px 2px 4px; text-align: center; font-size: 10px; line-height: 1.25;
+            background: var(--bg); border: 1px solid var(--border); }
+  .z-tile img { width: 72%; aspect-ratio: 1; display: block; margin: 0 auto 2px; }
+  .z-tile.off img { filter: brightness(0); opacity: .16; }
+  @media (prefers-color-scheme: dark) { .z-tile.off img { filter: brightness(0) invert(1); opacity: .2; } }
+  .z-tile.off .zn { color: var(--sub); }
+  .z-tile .zq { font-size: 28px; line-height: 1.4; opacity: .4; }
+  .z-tile .zc { position: absolute; top: 3px; right: 5px; font-size: 9px; color: var(--sub); }
+  .z-tile .zr { position: absolute; top: 3px; left: 5px; font-size: 9px; font-weight: 800; }
+  .g-rules { font-size: 13px; line-height: 1.7; }
+  .g-rules ul { padding-left: 1.2em; margin: 4px 0; }
   .reload-btn { padding: 7px 10px; }
   .reload-btn.spin { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -268,8 +317,9 @@
   <div class="header">
     <h1>🔔 呼び出し君</h1>
     <div class="header-btns">
+      <button class="help-btn coin-btn" data-page="pageGacha" id="coinBtn" aria-label="ガチャ">🪙 <span id="coinCount">0</span></button>
       <button class="help-btn reload-btn" id="reloadBtn" aria-label="最新の状態に更新">🔄</button>
-      <button class="help-btn" data-page="pageHelp">📖 使い方</button>
+      <button class="help-btn" data-page="pageHelp">📖<span class="help-label"> 使い方</span></button>
     </div>
   </div>
 
@@ -279,6 +329,56 @@
     <button data-page="pageWeather">☀️ 天気</button>
     <button data-page="pageWords">💬 ランダム</button>
   </div>
+
+  <section id="pageGacha" hidden>
+    <div class="card gacha-top">
+      <div class="g-wallet">
+        <div><span class="g-coin">🪙</span><b id="gCoins">0</b><small>コイン</small></div>
+        <div class="g-sub">💠 かけら <b id="gShards">0</b></div>
+      </div>
+      <div class="g-btns">
+        <button class="send" id="gPull1">1回まわす<small>🪙 10</small></button>
+        <button class="send g-ten" id="gPull10">10連<small>🪙 90・SR以上1つ確定</small></button>
+      </div>
+      <p class="hint" id="gPity"></p>
+      <p class="hint" id="gToday"></p>
+      <div id="gResult"></div>
+    </div>
+
+    <div class="card">
+      <h2>📗 図鑑</h2>
+      <div class="bsum"><b id="zCount">0</b><span class="hint" id="zOf"></span></div>
+      <div class="bbar"><i id="zBar" style="width:0"></i></div>
+      <p class="hint" style="margin:4px 0 8px">まだ出ていないものはシルエット。押すと、かけらで交換できます（シークレットは交換できません）。</p>
+      <div id="zukan"></div>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>🪙 コインのもらい方・ガチャの確率</summary>
+        <div class="g-rules">
+          <p><b>コインのもらい方</b></p>
+          <ul>
+            <li>ワンタップ通知：1回 1コイン（1日30コインまで）</li>
+            <li>いろいろ送るボタン：1日20コインまで
+              <br>・天気予報・占い：1回3コイン（それぞれ1日1回まで）
+              <br>・チンチロ・ランダムワード・アナグラム：1回3コイン
+              <br>・呼び出し：コインなし</li>
+            <li>その日はじめて送る：+10</li>
+            <li>連続で送った日数：3日 +20・7日 +50・14日 +100・30日 +200・100日 +500・365日 +1000</li>
+            <li>バッジをもらう：+30（隠しバッジは +100）</li>
+            <li>ボタンがレベルアップ：+50</li>
+            <li>アナグラムで揃う：難易度C +20・B +50・A +100・S +200・SS +300・SSS +500</li>
+          </ul>
+          <p><b>ガチャの確率</b>：N 59.8%・R 28%・SR 10%・SSR 2%・シークレット 0.2%</p>
+          <p><b>天井</b>：SSR が出ないまま50回まわすと、次は SSR 以上が確定</p>
+          <p><b>かぶったとき</b>：かけらになります（N 1・R 3・SR 10・SSR 30・シークレット 50）。<br>
+            交換に必要なかけら：N 10・R 30・SR 100・SSR 300</p>
+          <p><b>季節限定</b>：春（3〜5月）・夏（6〜8月）・秋（9〜11月）・冬（12〜2月）のシリーズは、その季節だけガチャに出ます。</p>
+        </div>
+      </details>
+    </div>
+  </section>
 
   <section id="pageHelp" class="help" hidden>
     <div class="card">
@@ -398,6 +498,22 @@
           </ul>
           <p>友達から<b>もらった</b>通知の履歴は、Bark アプリの中で見られます。</p>
           <p>回数は、送るのに成功したぶんだけ数えます。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🎁 ガチャと図鑑</summary>
+        <div class="body">
+          <p>送ると<b>コイン 🪙</b>がたまって、そのコインでガチャが回せます。タイトルの横の <span class="tag">🪙 コイン数</span> を押すとガチャ画面が開きます。</p>
+          <ul>
+            <li><b>1回 10コイン</b>、<b>10連 90コイン</b>（10連は SR 以上が1つ確定）</li>
+            <li>出たものは<b>図鑑</b>に集まります。全部で365種類！</li>
+            <li>季節限定のシリーズは、その季節のあいだだけ出ます</li>
+            <li>かぶったら<b>かけら 💠</b>になって、かけらを集めると図鑑の好きなものと交換できます</li>
+            <li>SSR が50回出なかったら、次は確定（天井）</li>
+            <li>SSR 以上が出たら、選んでいる送る相手に自慢の通知が届きます</li>
+          </ul>
+          <p>コインのもらい方は、ガチャ画面のいちばん下に書いてあります。</p>
         </div>
       </details>
 
@@ -686,6 +802,7 @@
 <div id="toast"></div>
 <div id="check" aria-label="送信しました">✓</div>
 
+<script src="gacha-items.js"></script>
 <script>
 // 通知のタイトルは絵文字だけ。label はボタンの読み上げ用、sound は Bark の通知音
 const QUICK = [
@@ -1501,7 +1618,8 @@ pageButtons.forEach(t => {
   t.onclick = () => {
     pageButtons.forEach(x => x.classList.toggle("on", x === t));
     window.scrollTo(0, 0);
-    ["pageSend", "pageLog", "pageWeather", "pageWords", "pageHelp"].forEach(p => $(p).hidden = t.dataset.page !== p);
+    ["pageSend", "pageLog", "pageWeather", "pageWords", "pageHelp", "pageGacha"].forEach(p => $(p).hidden = t.dataset.page !== p);
+    if (t.dataset.page === "pageGacha") renderGacha();
     if (t.dataset.page === "pageWords") renderWords();
     if (t.dataset.page === "pageLog") renderLog();
     if (t.dataset.page === "pageWeather") renderWeather();
@@ -1847,7 +1965,7 @@ function renderChart(log) {
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
 const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
-  "daily", "stats", "badges", "levels", "anagramText", "anagramLevel", "wordPick"];
+  "daily", "stats", "badges", "levels", "anagramText", "anagramLevel", "wordPick", "coins", "gacha"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1970,6 +2088,248 @@ $("bannerLater").onclick = () => {
 };
 
 // =====================================================================
+// ---- コイン ----
+// 送るともらえるコインで、ガチャを回す。1日の上限は「ワンタップ」と「いろいろ送る」で別々
+const COIN_RULES = {
+  quickCap: 30, extraCap: 20, extraEach: 3, login: 10,
+  streak: { 3: 20, 7: 50, 14: 100, 30: 200, 100: 500, 365: 1000 },
+  badge: 30, hiddenBadge: 100, levelUp: 50,
+  anagram: [20, 50, 100, 200, 300, 500], // 揃ったときの難易度 C〜SSS
+};
+
+function coinState() {
+  const c = store.get("coins", {});
+  const today = dayKey(new Date());
+  if (c.day !== today) Object.assign(c, { day: today, quick: 0, extra: 0, weather: false, lucky: false });
+  c.bal = c.bal || 0;
+  return c;
+}
+
+// コインを増やして、ヘッダーの 🪙 の横に「+3」をふわっと出す
+function earnCoins(n) {
+  if (!n) return;
+  const c = coinState();
+  c.bal += n;
+  store.set("coins", c);
+  renderCoins();
+  const r = $("coinBtn").getBoundingClientRect();
+  const p = document.createElement("div");
+  p.className = "coin-pop";
+  p.textContent = `+${n}`;
+  p.style.left = `${r.left + r.width / 2 - 10}px`;
+  p.style.top = `${r.bottom + 2}px`;
+  document.body.appendChild(p);
+  p.animate([{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(16px)", opacity: 0 }],
+    { duration: 1100, easing: "ease-out" }).onfinish = () => p.remove();
+}
+
+function renderCoins() {
+  const c = coinState();
+  $("coinCount").textContent = c.bal.toLocaleString();
+  if (!$("pageGacha").hidden) renderGachaTop();
+}
+
+// 送ったときのコイン（onSent から呼ぶ）
+function coinsForSend(kind, info) {
+  const c = coinState();
+  let n = 0;
+  // その日はじめて送った + 連続日数のボーナス
+  if (c.loginDay !== c.day) {
+    c.loginDay = c.day;
+    n += COIN_RULES.login;
+    const streak = currentStreak();
+    if (COIN_RULES.streak[streak]) n += COIN_RULES.streak[streak];
+  }
+  if (kind === "quick" && c.quick < COIN_RULES.quickCap) { c.quick++; n += 1; }
+  const extra = amount => { const a = Math.min(amount, COIN_RULES.extraCap - c.extra); if (a > 0) { c.extra += a; n += a; } };
+  if (kind === "weather" || kind === "lucky") {
+    if (!c[kind]) { c[kind] = true; extra(COIN_RULES.extraEach); } // 天気・占いはそれぞれ1日1回まで
+  }
+  if (kind === "dice" || kind === "word" || kind === "anagram") extra(COIN_RULES.extraEach);
+  // アナグラムで揃ったら難易度に応じてボーナス（上限なし）
+  if (kind === "anagram" && info.matches && info.matchRank >= 0) n += COIN_RULES.anagram[info.matchRank];
+  store.set("coins", c);
+  earnCoins(n);
+}
+
+// 今日まで何日連続で送っているか
+function currentStreak() {
+  const daily = store.get("daily", {});
+  let n = 0;
+  const d = new Date();
+  while (daily[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+// =====================================================================
+// ---- ガチャ ----
+const RARITY_RATE = [["X", 0.2], ["SSR", 2], ["SR", 10], ["R", 28], ["N", 59.8]];
+const RARITY_LABEL = { N: "N", R: "R", SR: "SR", SSR: "SSR", X: "シークレット" };
+const SHARD_GET = { N: 1, R: 3, SR: 10, SSR: 30, X: 50 };
+const SHARD_COST = { N: 10, R: 30, SR: 100, SSR: 300 };
+const PITY = 50;
+const GACHA_COST = { 1: 10, 10: 90 };
+
+// 図鑑データ（gacha-items.js）を使いやすい形に
+const G_SERIES = (window.GACHA_SERIES || []).map(s => ({
+  ...s,
+  items: s.items.map(t => { const [f, name, r] = t.split("|"); return { id: f, f, name, r, series: s.id }; }),
+}));
+const G_ITEMS = G_SERIES.flatMap(s => s.items);
+const G_BY_ID = Object.fromEntries(G_ITEMS.map(it => [it.id, it]));
+const seriesOf = it => G_SERIES.find(s => s.id === it.series);
+const inSeason = s => !s.months || s.months.includes(new Date().getMonth() + 1);
+const gImg = it => `${FLUENT}${encodeURIComponent(it.f)}/Color/${encodeURIComponent(it.f.toLowerCase().replace(/ /g, "_"))}_color.svg`;
+
+const gachaState = () => ({ owned: {}, firsts: {}, shards: 0, pity: 0, pulls: 0, ...store.get("gacha", {}) });
+
+// レア度を決めて、今出せる（季節が合う）アイテムの中から1つ選ぶ
+function rollItem(minRarity) {
+  const order = ["N", "R", "SR", "SSR", "X"];
+  let r;
+  if (minRarity) {
+    // 確定枠：minRarity 以上だけで確率を配分しなおす
+    const pool = RARITY_RATE.filter(([x]) => order.indexOf(x) >= order.indexOf(minRarity));
+    const total = pool.reduce((a, [, p]) => a + p, 0);
+    let v = Math.random() * total;
+    r = pool.find(([, p]) => (v -= p) < 0)?.[0] || minRarity;
+  } else {
+    let v = Math.random() * 100;
+    r = RARITY_RATE.find(([, p]) => (v -= p) < 0)?.[0] || "N";
+  }
+  const pool = G_ITEMS.filter(it => it.r === r && inSeason(seriesOf(it)));
+  return rand(pool.length ? pool : G_ITEMS.filter(it => it.r === "N"));
+}
+
+async function pullGacha(times) {
+  const c = coinState();
+  const cost = GACHA_COST[times];
+  if (c.bal < cost) return toast(`コインが足りません（あと ${cost - c.bal} コイン）`, false);
+  c.bal -= cost;
+  store.set("coins", c);
+  renderCoins();
+
+  const g = gachaState();
+  const results = [];
+  for (let i = 0; i < times; i++) {
+    let it;
+    if (g.pity >= PITY - 1) it = rollItem("SSR"); // 天井
+    else if (times === 10 && i === 9 && !results.some(x => ["SR", "SSR", "X"].includes(x.r))) it = rollItem("SR"); // 10連の確定枠
+    else it = rollItem();
+    g.pity = ["SSR", "X"].includes(it.r) ? 0 : g.pity + 1;
+    g.pulls++;
+    const isNew = !g.owned[it.id];
+    g.owned[it.id] = (g.owned[it.id] || 0) + 1;
+    if (isNew) g.firsts[it.id] = Date.now();
+    else g.shards += SHARD_GET[it.r];
+    results.push({ ...it, isNew });
+  }
+  store.set("gacha", g);
+
+  // 演出：カプセルがゆれてから結果を出す
+  haptic();
+  $("gPull1").disabled = $("gPull10").disabled = true;
+  $("gResult").innerHTML = `<div class="g-capsule">🎁</div>`;
+  await new Promise(r => setTimeout(r, 750));
+  $("gResult").innerHTML = `<div class="g-cards ${times === 1 ? "one" : ""}">${results.map((it, i) => `
+    <div class="g-card r-${it.r}" style="animation-delay:${i * 70}ms">${it.isNew ? `<span class="new">NEW</span>` : ""}
+      <img src="${gImg(it)}" alt=""><div class="gr">${RARITY_LABEL[it.r]}</div><div>${esc(it.name)}</div></div>`).join("")}</div>`;
+  renderGachaTop();
+  renderZukan();
+
+  const best = results.filter(it => ["SSR", "X"].includes(it.r));
+  if (best.length) {
+    confetti();
+    haptic();
+    // SSR 以上は送る相手に自慢の通知（ログには数えない）
+    if (getTargets().length) sendAll(getTargets(), () => ({
+      title: "🎁 ガチャで大当たり！",
+      body: best.map(it => `${RARITY_LABEL[it.r]} ${it.name}`).join("\n"),
+      opts: { noLog: true },
+    }));
+  }
+  checkBadges();
+}
+
+function renderGachaTop() {
+  const c = coinState(), g = gachaState();
+  $("gCoins").textContent = c.bal.toLocaleString();
+  $("gShards").textContent = g.shards.toLocaleString();
+  $("gPull1").disabled = c.bal < GACHA_COST[1];
+  $("gPull10").disabled = c.bal < GACHA_COST[10];
+  $("gPity").textContent = `SSR 確定まで あと ${PITY - g.pity} 回`;
+  $("gToday").textContent = `今日のコイン：ワンタップ ${c.quick} / ${COIN_RULES.quickCap}・いろいろ送る ${c.extra} / ${COIN_RULES.extraCap}`;
+}
+
+// 図鑑。シリーズごとに開け閉めできる（画像は開いたときに読み込む）
+function renderZukan() {
+  const g = gachaState();
+  const have = G_ITEMS.filter(it => g.owned[it.id]).length;
+  $("zCount").textContent = have;
+  $("zOf").textContent = `/ ${G_ITEMS.length} 種類（${Math.floor(have / G_ITEMS.length * 100)}%）`;
+  $("zBar").style.width = `${have / G_ITEMS.length * 100}%`;
+  const openIds = new Set([...document.querySelectorAll("#zukan details[open]")].map(d => d.dataset.id));
+  $("zukan").innerHTML = G_SERIES.map(s => {
+    const n = s.items.filter(it => g.owned[it.id]).length;
+    const season = s.months ? `（${s.months[0]}〜${s.months[s.months.length - 1]}月${inSeason(s) ? "・開催中" : ""}）` : "";
+    const tiles = s.items.map(it => {
+      const got = g.owned[it.id];
+      if (!got && it.r === "X") return `<div class="z-tile off"><div class="zq">❓</div><div class="zn">？？？</div></div>`;
+      return `<div class="z-tile ${got ? "" : "off"}" data-id="${esc(it.id)}">
+        <span class="zr r-${it.r}"><span class="gr">${it.r === "X" ? "S" : it.r}</span></span>${got > 1 ? `<span class="zc">×${got}</span>` : ""}
+        <img loading="lazy" src="${gImg(it)}" alt=""><div class="zn">${got ? esc(it.name) : "？？？"}</div></div>`;
+    }).join("");
+    return `<details class="bcat" data-id="${s.id}" ${openIds.has(s.id) ? "open" : ""}>
+      <summary>${esc(s.name)}<small>${season} ${n} / ${s.items.length}</small></summary><div class="z-grid">${tiles}</div></details>`;
+  }).join("");
+
+  $("zukan").querySelectorAll(".z-tile[data-id]").forEach(el => el.onclick = () => {
+    const it = G_BY_ID[el.dataset.id];
+    const gs = gachaState();
+    const cnt = gs.owned[it.id] || 0;
+    const img = `<img src="${gImg(it)}" alt="" style="width:72px;height:72px">`;
+    if (cnt) {
+      return openModal(`${RARITY_LABEL[it.r]}・${seriesOf(it).name}`, img, it.name,
+        `${cnt}こ持っています<br>はじめて出た日：${new Date(gs.firsts[it.id] || Date.now()).toLocaleDateString("ja-JP")}`);
+    }
+    const cost = SHARD_COST[it.r];
+    openModal(`${RARITY_LABEL[it.r]}・${seriesOf(it).name}`, `<img src="${gImg(it)}" alt="" style="width:72px;height:72px;filter:brightness(0);opacity:.2">`,
+      "？？？", `かけら ${cost} 個で交換できます（いま ${gs.shards} 個）`);
+    // OK ボタンを「交換する」に変える（足りなければ押せない）
+    const card = document.querySelector(".modal .modal-card");
+    const btn = document.createElement("button");
+    btn.className = "send";
+    btn.style.marginTop = "8px";
+    btn.textContent = `💠 ${cost} かけらで交換`;
+    btn.disabled = gs.shards < cost;
+    btn.onclick = () => {
+      const g2 = gachaState();
+      if (g2.shards < cost) return;
+      g2.shards -= cost;
+      g2.owned[it.id] = 1;
+      g2.firsts[it.id] = Date.now();
+      store.set("gacha", g2);
+      const st = store.get("stats", {});
+      (st.flags = st.flags || {}).gShard = true;
+      store.set("stats", st);
+      btn.closest(".modal").remove();
+      modalOpen = false;
+      renderGachaTop();
+      renderZukan();
+      confetti();
+      // 交換のお知らせを閉じてから、もらえたバッジを出す
+      openModal("💠 交換しました！", `<img src="${gImg(it)}" alt="" style="width:72px;height:72px">`, it.name,
+        `${RARITY_LABEL[it.r]}・${seriesOf(it).name}`, () => checkBadges());
+    };
+    card.insertBefore(btn, card.querySelector("button"));
+  });
+}
+
+function renderGacha() { renderGachaTop(); renderZukan(); }
+$("gPull1").onclick = () => pullGacha(1);
+$("gPull10").onclick = () => pullGacha(10);
+
+// =====================================================================
 // ---- ボタンのレベル ----
 // 絵文字ごとの累計回数でレベルが上がる。Lv.1〜5
 const LEVELS = [0, 50, 200, 500, 1000];
@@ -2008,6 +2368,7 @@ function renderLevels(celebrate) {
 }
 
 function levelUp(btn, e, lv) {
+  earnCoins(COIN_RULES.levelUp);
   for (let i = 0; i < 3; i++) setTimeout(() => burst(btn, i === 1 && lv >= 5 ? "👑" : e), i * 120);
   const r = btn.getBoundingClientRect();
   const tag = document.createElement("div");
@@ -2029,7 +2390,7 @@ function levelUp(btn, e, lv) {
 // ---- バッジ ----
 // 送った記録（ログ・日ごとの記録・特別な出来事）から、もらえるバッジを判定する
 
-const BADGE_CATS = ["回数", "合計", "いろいろ送る", "続ける", "連打", "時間", "チンチロ", "占い", "アナグラム", "コンプリート", "隠しバッジ"];
+const BADGE_CATS = ["回数", "合計", "いろいろ送る", "続ける", "連打", "時間", "チンチロ", "占い", "アナグラム", "ガチャ", "図鑑", "コンプリート", "隠しバッジ"];
 const CC_HANDS = ["pinzoro", "zoro", "shigoro", "me", "menashi", "hifumi"];
 const TIER = ["🥉", "🥈", "🥇"];
 const EMOJI_BADGE_NAMES = {
@@ -2121,6 +2482,25 @@ const BADGES = [
     desc: `アナグラムで難易度${r}（${ANAGRAM_RANKS[i].min.toLocaleString()}回に1回以上むずかしい）の言葉を元どおりに揃える`,
     flag: true,
   })),
+  // ガチャ
+  ...[[1, "🎁", "はじめてのガチャ"], [10, "🎟", "ガチャ好き"], [100, "🎰", "ガチャ中毒"], [500, "🏦", "ガチャ富豪"]].map(([goal, e, name]) => ({
+    id: `gPull${goal}`, cat: "ガチャ", e, name, desc: `ガチャを${goal}回まわす`, goal, val: c => c.g.pulls,
+  })),
+  { id: "gSR", cat: "ガチャ", e: "💜", name: "SRゲット", desc: "ガチャで SR を出す", goal: 1, val: c => G_ITEMS.filter(it => it.r === "SR" && c.g.owned[it.id]).length },
+  { id: "gSSR", cat: "ガチャ", e: "💛", name: "SSRゲット", desc: "ガチャで SSR を出す", goal: 1, val: c => G_ITEMS.filter(it => it.r === "SSR" && c.g.owned[it.id]).length },
+  { id: "gSSR5", cat: "ガチャ", e: "🌟", name: "SSRコレクター", desc: "SSR を5種類集める", goal: 5, val: c => G_ITEMS.filter(it => it.r === "SSR" && c.g.owned[it.id]).length },
+  { id: "gSecret", cat: "隠しバッジ", e: "🌈", name: "シークレット発見", desc: "ガチャでシークレットを出す", goal: 1, val: c => G_ITEMS.filter(it => it.r === "X" && c.g.owned[it.id]).length, hidden: true },
+  { id: "gShard", cat: "ガチャ", e: "💠", name: "はじめての交換", desc: "かけらでアイテムを交換する", flag: true },
+  // 図鑑：集めた数と、シリーズごとのコンプリート
+  ...[[30, "📗", "図鑑づくり"], [100, "📘", "図鑑はかせ"], [200, "📙", "図鑑マスター"], [300, "📚", "図鑑の主"]].map(([goal, e, name]) => ({
+    id: `zuk${goal}`, cat: "図鑑", e, name, desc: `図鑑に${goal}種類あつめる`, goal, val: c => G_ITEMS.filter(it => c.g.owned[it.id]).length,
+  })),
+  { id: "zukAll", cat: "図鑑", e: "👑", name: "図鑑コンプリート", desc: `図鑑の${G_ITEMS.length}種類を全部あつめる`, goal: G_ITEMS.length, val: c => G_ITEMS.filter(it => c.g.owned[it.id]).length },
+  ...G_SERIES.map(s => ({
+    id: `zs_${s.id}`, cat: s.id === "secret" ? "隠しバッジ" : "図鑑", e: "🏵", name: `${s.name.replace(/^\S+\s/, "")} コンプ`,
+    desc: `「${s.name}」シリーズを全部あつめる`, goal: s.items.length, val: c => s.items.filter(it => c.g.owned[it.id]).length,
+    hidden: s.id === "secret",
+  })),
   // コンプリート
   { id: "allEmoji", cat: "コンプリート", e: "🌈", name: "ぜんぶ送った", desc: "6つの絵文字を全部1回以上送る", goal: 6, val: c => QUICK.filter(q => c.t[q.emoji]).length },
   { id: "allFeat", cat: "コンプリート", e: "🧰", name: "なんでも屋", desc: "天気・占い・チンチロ・ランダムを全部1回以上送る", goal: 4, val: c => FEATURES.filter(e => c.t[e]).length },
@@ -2181,6 +2561,7 @@ function badgeContext() {
     maxDay: Math.max(0, ...days.map(k => sumDay(daily[k]))),
     rainbowDay: days.some(k => QUICK.every(q => daily[k][q.emoji])),
     badgeCount: BADGES.filter(b => got[b.id] !== undefined).length,
+    g: gachaState(),
     s,
   };
 }
@@ -2204,6 +2585,7 @@ function checkBadges(celebrate = true) {
     store.set("badges", got);
   }
   if (celebrate && fresh.length) {
+    earnCoins(fresh.reduce((a, b) => a + (b.hidden ? COIN_RULES.hiddenBadge : COIN_RULES.badge), 0));
     fresh.forEach(b => badgeQueue.push(b));
     showNextBadge();
     notifyBadges(fresh);
@@ -2280,6 +2662,7 @@ function onSent(kind, info = {}) {
     });
   }
   store.set("stats", s);
+  coinsForSend(kind, info);
   renderLevels(true);
   checkBadges();
 
@@ -2418,6 +2801,7 @@ function checkPop() {
 
 renderFriends();
 checkBackupReminder();
+renderCoins();
 </script>
 </body>
 </html>
