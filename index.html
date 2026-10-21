@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bark 通知ボタン</title>
+<title>呼び出し君</title>
+<!-- ホーム画面に追加したときのアイコンと名前 -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="呼び出し君">
 <style>
   :root {
     --bg: #f5f5f7; --card: #fff; --text: #1d1d1f; --sub: #6e6e73;
@@ -207,13 +211,21 @@
   .hist .bd { white-space: pre-line; color: var(--text); }
   .hist .n { color: var(--accent); font-weight: 700; margin-left: 4px; }
   /* ワンタップ通知 / いろいろ送る / アナグラム の間にさりげない区切り線 */
-  .extra-grid, .anagram-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .extra-grid, .input-rows { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
   .extra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .input-rows { display: grid; gap: 12px; }
   .anagram-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: stretch; }
   .anagram-row .weather-send { padding: 12px 0; }
   .anagram-row .weather-send .emo { width: 30px; height: 30px; }
-  .anagram-row input { border-radius: 18px; padding: 0 14px; }
+  .anagram-row input, .anagram-row select { border-radius: 18px; padding: 0 14px; min-width: 0; }
   .anagram-row input.err { border-color: var(--ng); animation: shake .35s; }
+  .level-pick { display: flex; gap: 18px; padding-left: 76px; margin-top: -4px; }
+  .level-pick label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 14px; color: var(--text); cursor: pointer; }
+  .level-pick input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+  .level-pick { flex-wrap: wrap; row-gap: 6px; }
+  .arank { flex-basis: 100%; font-size: 12px; color: var(--sub); }
+  .arank[data-rank="S"], .arank[data-rank="SS"], .arank[data-rank="SSS"] { color: var(--accent); font-weight: 700; }
+  #callSend { color: var(--ng); }
   .weather-send { width: 100%; padding: 14px 8px; display: flex; align-items: center; justify-content: center;
                   gap: 8px; font-size: 16px; font-weight: 600; background: var(--bg); color: var(--text);
                   border: 1px solid var(--border); border-radius: 18px; transition: transform .08s; }
@@ -250,7 +262,7 @@
 <body>
 <main>
   <div class="header">
-    <h1>🔔 Bark 通知ボタン</h1>
+    <h1>🔔 呼び出し君</h1>
     <button class="help-btn" data-page="pageHelp">📖 使い方</button>
   </div>
 
@@ -319,8 +331,12 @@
             <li><b>🔮 占い</b><br>今日のラッキーアイテム・ラッキーカラー・運勢がランダムで届きます。</li>
             <li><b>🎲 チンチロ</b><br>サイコロ3つを振って、役が届きます。役が出なければ3回まで振り直し。2人以上に送ると、「送った内容」でいちばん強い人に 👑 が付きます。<br>
               <small>強い順：👑 ピンゾロ（1・1・1）＞ 🎰 ゾロ目 ＞ 🎉 シゴロ（4・5・6）＞ 目（2つそろって残りの数。6が最強）＞ 💨 目なし ＞ 💀 ヒフミ（1・2・3）</small></li>
-            <li><b>💬 ランダム</b><br>「💬 ランダム」タブで作った言葉の中から、ランダムに1つ届きます。</li>
-            <li><b>🔀 アナグラム</b><br>いちばん下の入力欄に言葉を入れて、左の 🔀 ボタンを押すと、文字がバラバラに並びかわって届きます（例：青いベンチ → いチ青ベン）。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。</li>
+            <li><b>🚨 呼び出し</b><br>相手がマナーモードや集中モードでも、<b>音を鳴らして</b>知らせます。押すと確認が出るので、OKを押すと送られます。<br>
+              <small>※ 相手の iPhone で「設定 → 通知 → Bark → <b>重要な通知</b>」をオンにしてもらう必要があります。オフだと、ふつうの通知として届きます。</small></li>
+            <li><b>💬 ランダムワード</b><br>右のプルダウンでタイトルを選んで 💬 を押すと、そのタイトルの本文からランダムに1つ届きます。「すべてのタイトルから」を選ぶと、タイトルもランダムです。言葉は「💬 ランダム」タブで作ります。</li>
+            <li><b>🔀 アナグラム</b><br>入力欄に言葉を入れて 🔀 を押すと、文字がバラバラに並びかわって届きます。たまたま元どおりに揃ったら 🎉 お祝いの通知になります。<br>
+              <small>ふつう：文字を並べかえるだけ（青いベンチ → いチ青ベン）<br>むずかしい：同じ文字が何回も出たり、出ない文字があったり（青いベンチ → ベベ青チ青）<br>
+              入力欄の下に、その言葉の<b>難易度</b>（C・B・A・S…）と「何回に1回揃うか」が出ます。同じ文字が多い言葉は揃いやすいので、難易度は低めになります。</small></li>
           </ul>
         </div>
       </details>
@@ -417,9 +433,10 @@
           <ol>
             <li>Safari でこのページを開く</li>
             <li>画面下の <span class="tag">共有ボタン（□に↑）</span> を押す</li>
-            <li><span class="tag">ホーム画面に追加</span> を選ぶ</li>
+            <li><span class="tag">ホーム画面に追加</span> を選ぶ（名前は「呼び出し君」、ベルのアイコンになります）</li>
           </ol>
-          <p>アプリみたいにすぐ開けるようになります。しかも、ホーム画面から使うと<b>データが自動で消えにくく</b>なります。</p>
+          <p>アプリみたいにすぐ開けるようになります。</p>
+          <div class="tip-box">💾 Safari は「7日以上開かなかったサイト」のデータを消すことがあります。ときどき開いて、バックアップもしておくと安心です。</div>
         </div>
       </details>
 
@@ -598,11 +615,22 @@
       <button class="weather-send" id="weatherSend"></button>
       <button class="weather-send" id="luckySend"></button>
       <button class="weather-send" id="diceSend"></button>
-      <button class="weather-send" id="wordSend"></button>
+      <button class="weather-send" id="callSend"></button>
     </div>
-    <div class="anagram-row">
-      <button class="weather-send" id="anagramSend"></button>
-      <input id="anagramText" maxlength="30" placeholder="バラバラにする言葉" autocomplete="off">
+    <div class="input-rows">
+      <div class="anagram-row">
+        <button class="weather-send" id="wordSend"></button>
+        <select id="wordPick" aria-label="送るランダムワードのタイトル"></select>
+      </div>
+      <div class="anagram-row">
+        <button class="weather-send" id="anagramSend"></button>
+        <input id="anagramText" maxlength="30" placeholder="バラバラにする言葉" autocomplete="off">
+      </div>
+      <div class="level-pick" role="radiogroup" aria-label="アナグラムの難しさ">
+        <label><input type="radio" name="anagramLevel" value="normal"> ふつう</label>
+        <label><input type="radio" name="anagramLevel" value="hard"> むずかしい</label>
+        <span class="arank" id="anagramRank"></span>
+      </div>
     </div>
     <div class="sent-box" id="sentBox" hidden></div>
   </div>
@@ -676,6 +704,7 @@ const EMOJI_IMG = {
   "💬": "Speech%20balloon/Color/speech_balloon_color.svg",
   "🔀": "Shuffle%20tracks%20button/Color/shuffle_tracks_button_color.svg",
   "🎉": "Party%20popper/Color/party_popper_color.svg",
+  "🚨": "Police%20car%20light/Color/police_car_light_color.svg",
 };
 // 画像がある絵文字は <img>、ない絵文字（昔のログなど）はそのまま文字で
 const emo = (e, cls = "emo") => EMOJI_IMG[e]
@@ -892,6 +921,8 @@ async function sendOne(f, title, body, opts = {}) {
   if (icon) params.set("icon", icon);
   if (opts.sound) params.set("sound", opts.sound);
   if (opts.level) params.set("level", opts.level);
+  if (opts.volume !== undefined) params.set("volume", opts.volume); // 重要な通知（critical）の音量 0〜10
+  if (opts.call) params.set("call", "1"); // 着信音のように30秒鳴らし続ける
   const url = `${server}/${encodeURIComponent(f.key)}?${params}`;
 
   try {
@@ -1151,6 +1182,27 @@ $("diceSend").onclick = async () => {
   toastResult(r);
 };
 
+// ---- 呼び出し（マナーモード・集中モードでも音が鳴る）----
+// Bark の「重要な通知（critical）」を使う。相手の Bark で重要な通知が許可されている必要がある
+const CALL_LOG = "🚨";
+$("callSend").innerHTML = `${emo(CALL_LOG)}呼び出し`;
+$("callSend").onclick = async () => {
+  const list = needTargets();
+  if (!list) return;
+  // うっかり押して夜中に鳴らさないよう、毎回確認する
+  if (!confirm("マナーモードを貫通して強制的に音を鳴らします")) return;
+  haptic();
+  pop($("callSend"), CALL_LOG);
+  const r = await sendAll(list, () => ({
+    title: "🚨 呼び出し！",
+    body: "気づいたら連絡してね！",
+    opts: { level: "critical", volume: 5, sound: "alarm", logAs: CALL_LOG },
+  }));
+  showSent(r.items);
+  toastResult(r);
+  if (r.ok.length) onSent("call", { recipients: r.ok.length });
+};
+
 // ---- ランダムワード ----
 const WORD_LOG = "💬";
 const getWords = () => store.get("words", []);
@@ -1170,6 +1222,46 @@ function shuffleChars(chars) {
   }
   return a.join("");
 }
+// むずかしい：1文字ずつ、元の言葉の文字からランダムに選ぶ（同じ文字が何回も出たり、出ない文字があったりする）
+const scrambleHard = chars => chars.map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
+
+// ---- 揃いやすさ → 難易度ランク ----
+// 「何回に1回、元どおりに揃うか」を計算する
+//   ふつう：並べ方の種類の数（同じ文字どうしの入れかえは見た目が同じなので数えない）= n! ÷ (同じ文字の数)! の積
+//   むずかしい：1文字ずつ元の文字が出る確率（その文字の数 ÷ 全体の文字数）をかけ合わせたものの逆数
+function anagramOdds(chars, hard) {
+  const n = chars.length;
+  const counts = {};
+  chars.forEach(c => counts[c] = (counts[c] || 0) + 1);
+  if (hard) return 1 / chars.reduce((p, c) => p * counts[c] / n, 1);
+  const fact = k => { let x = 1; for (let i = 2; i <= k; i++) x *= i; return x; };
+  return Object.values(counts).reduce((x, k) => x / fact(k), fact(n));
+}
+// 揃いにくさのランク。odds（何回に1回）がこの数以上ならそのランク。C より簡単なものはランクなし
+const ANAGRAM_RANKS = [
+  { r: "C", min: 6 }, { r: "B", min: 24 }, { r: "A", min: 120 },
+  { r: "S", min: 720 }, { r: "SS", min: 5040 }, { r: "SSS", min: 40320 },
+];
+const anagramRank = odds => ANAGRAM_RANKS.reduce((idx, x, i) => odds >= x.min ? i : idx, -1);
+const oddsText = odds => odds >= 1e8 ? `${(odds / 1e8).toFixed(1)}億回に1回`
+  : odds >= 1e4 ? `${Math.round(odds / 1e4).toLocaleString()}万回に1回` : `${Math.round(odds).toLocaleString()}回に1回`;
+
+// 入力中の言葉の難易度を表示
+function renderAnagramRank() {
+  const text = $("anagramText").value.trim();
+  if (!text) { $("anagramRank").textContent = ""; return; }
+  const odds = anagramOdds(splitChars(text), getAnagramLevel() === "hard");
+  const idx = anagramRank(odds);
+  $("anagramRank").textContent = idx < 0 ? "難易度：ランク外" : `難易度${ANAGRAM_RANKS[idx].r}（${oddsText(odds)}）`;
+  $("anagramRank").dataset.rank = idx < 0 ? "" : ANAGRAM_RANKS[idx].r;
+}
+
+// 難しさ（ふつう / むずかしい）も覚えておく
+const getAnagramLevel = () => store.get("anagramLevel", "normal");
+document.querySelectorAll('input[name="anagramLevel"]').forEach(r => {
+  r.checked = r.value === getAnagramLevel();
+  r.onchange = () => { store.set("anagramLevel", r.value); renderAnagramRank(); };
+});
 
 $("anagramSend").innerHTML = emo(ANAGRAM_LOG);
 $("anagramSend").setAttribute("aria-label", "アナグラムを送る");
@@ -1178,7 +1270,9 @@ $("anagramText").value = store.get("anagramText", "");
 $("anagramText").addEventListener("input", () => {
   $("anagramText").classList.remove("err");
   store.set("anagramText", $("anagramText").value);
+  renderAnagramRank();
 });
+renderAnagramRank();
 $("anagramText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("anagramSend").click(); });
 $("anagramSend").onclick = async () => {
   const text = $("anagramText").value.trim();
@@ -1193,15 +1287,19 @@ $("anagramSend").onclick = async () => {
   haptic();
   pop($("anagramSend"), ANAGRAM_LOG);
   const chars = splitChars(text);
+  const hard = getAnagramLevel() === "hard";
   // 全部同じ文字（「ああ」など）や1文字だと必ず揃ってしまうので、お祝いは2種類以上の文字があるときだけ
   const canMatch = new Set(chars).size >= 2;
-  const shuffled = new Map(list.map(f => [f.key, shuffleChars(chars)]));
+  const shuffled = new Map(list.map(f => [f.key, hard ? scrambleHard(chars) : shuffleChars(chars)]));
   const isMatch = s => canMatch && s === text;
+  const mark = hard ? "（むずかしい）" : "";
+  const rankIdx = anagramRank(anagramOdds(chars, hard));
+  const rankText = rankIdx < 0 ? "" : ` 難易度${ANAGRAM_RANKS[rankIdx].r}`;
   const r = await sendAll(list, f => {
     const s = shuffled.get(f.key);
     return isMatch(s)
-      ? { title: "🎉 アナグラム大成功！", body: `🎊 ${s} 🎊`, opts: { logAs: ANAGRAM_LOG } }
-      : { title: "🔀 アナグラム", body: s, opts: { logAs: ANAGRAM_LOG } };
+      ? { title: `🎉 アナグラム大成功！${rankText}`, body: `🎊 ${s} 🎊`, opts: { logAs: ANAGRAM_LOG } }
+      : { title: `🔀 アナグラム${mark}`, body: s, opts: { logAs: ANAGRAM_LOG } };
   });
   showSent(r.items);
   const hits = r.ok.filter(f => isMatch(shuffled.get(f.key)));
@@ -1209,7 +1307,14 @@ $("anagramSend").onclick = async () => {
     confetti();
     for (let i = 0; i < 3; i++) setTimeout(() => burst($("anagramSend"), "🎉"), i * 150);
   }
-  if (r.ok.length) onSent("anagram", { recipients: r.ok.length, match: hits.length > 0 && chars.length >= 3 });
+  if (r.ok.length) onSent("anagram", {
+    recipients: r.ok.length, hard, len: chars.length,
+    // 元どおりに揃った人数と、そのときの難易度ランク（ランク外の簡単な言葉は数えない）
+    matches: rankIdx >= 0 ? hits.length : 0,
+    matchRank: hits.length ? rankIdx : -1,
+    // むずかしいで、全部同じ文字になった（「ベベベベベ」みたいな）
+    allSame: canMatch && chars.length >= 3 && r.ok.some(f => new Set(splitChars(shuffled.get(f.key))).size === 1),
+  });
   if (r.ng.length) return toastResult(r);
   checkPop();
 };
@@ -1242,15 +1347,34 @@ $("anagramSend").onclick = async () => {
   if (words) store.set("words", words.filter(g => !OLD_WORDS.some(o => same({ title: g.title, bodies: g.bodies }, o))));
   store.set("samplesRemoved", true);
 })();
-$("wordSend").innerHTML = `${emo(WORD_LOG)}ランダム`;
+$("wordSend").innerHTML = emo(WORD_LOG);
+$("wordSend").setAttribute("aria-label", "ランダムワードを送る");
+
+// プルダウン：「すべて」＋ ランダムページのタイトル（本文があるものだけ）。選んだものは覚えておく
+const wordTitle = g => g.title || "（タイトルなし）";
+function renderWordPick() {
+  const groups = getWords().filter(g => g.bodies.length);
+  const saved = store.get("wordPick", "__all");
+  $("wordPick").innerHTML = `<option value="__all">すべてのタイトルから</option>`
+    + groups.map(g => `<option value="${esc(wordTitle(g))}">${esc(wordTitle(g))}</option>`).join("");
+  $("wordPick").value = groups.some(g => wordTitle(g) === saved) ? saved : "__all";
+  $("wordPick").disabled = !groups.length;
+  if (!groups.length) $("wordPick").innerHTML = `<option>「💬 ランダム」タブで作ってね</option>`;
+}
+$("wordPick").onchange = e => store.set("wordPick", e.target.value);
+renderWordPick();
+
 $("wordSend").onclick = async () => {
   const list = needTargets();
   if (!list) return;
-  const groups = getWords().filter(g => g.bodies.length);
-  if (!groups.length) return toast("「💬 ランダム」タブで本文を登録してね", false);
+  const all = getWords().filter(g => g.bodies.length);
+  if (!all.length) return toast("「💬 ランダム」タブで本文を登録してね", false);
+  const pick = $("wordPick").value;
+  const groups = pick === "__all" ? all : all.filter(g => wordTitle(g) === pick);
+  if (!groups.length) return toast("選んだタイトルが見つかりません", false);
   haptic();
   pop($("wordSend"), WORD_LOG);
-  // ワードも1人ずつランダムに選ぶ
+  // ワードも1人ずつランダムに選ぶ（「すべて」のときはタイトルもランダム）
   const r = await sendAll(list, () => {
     const g = rand(groups);
     return { title: g.title || "💬", body: rand(g.bodies), opts: { logAs: WORD_LOG } };
@@ -1281,6 +1405,7 @@ function renderWords() {
       words.splice(i, 1);
       store.set("words", words);
       renderWords();
+      renderWordPick();
     };
     box.appendChild(card);
   });
@@ -1291,6 +1416,7 @@ function saveWords() {
     bodies: c.querySelector(".wb").value.split("\n").map(x => x.trim()).filter(Boolean),
   }));
   store.set("words", words);
+  renderWordPick();
 }
 $("wordGroups").addEventListener("input", saveWords);
 $("wordAdd").onclick = () => {
@@ -1581,7 +1707,7 @@ function updateOrder(log) {
   const old = new Set();
   Object.values(log).forEach(o => Object.keys(o).forEach(e => old.add(e)));
   const cur = QUICK.map(q => q.emoji);
-  const extra = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, WORD_LOG, ANAGRAM_LOG];
+  const extra = [WEATHER_LOG, LUCKY_LOG, DICE_LOG, CALL_LOG, WORD_LOG, ANAGRAM_LOG];
   ORDER = [...cur, ...extra, ...[...old].filter(e => !cur.includes(e) && !extra.includes(e) && e !== FREE), ...(old.has(FREE) ? [FREE] : [])];
 }
 let viewYear = new Date().getFullYear();
@@ -1700,7 +1826,7 @@ function renderChart(log) {
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
 const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
-  "daily", "stats", "badges", "levels", "anagramText"];
+  "daily", "stats", "badges", "levels", "anagramText", "anagramLevel", "wordPick"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -1708,7 +1834,8 @@ async function exportBackup() {
   const data = {};
   BACKUP_KEYS.forEach(k => { const v = store.get(k, undefined); if (v !== undefined) data[k] = v; });
   const json = JSON.stringify({ app: "bark-notify", version: 1, exportedAt: new Date().toISOString(), data }, null, 2);
-  const name = `bark-backup-${today()}.json`;
+  // 毎回同じ名前にして、保存するときに前のバックアップを上書きできるようにする（日付はファイルの中に入っている）
+  const name = "yobidashikun-backup.json";
   const file = new File([json], name, { type: "application/json" });
 
   try {
@@ -1779,7 +1906,7 @@ $("importFile").onchange = async e => {
     Object.entries(d.badges || {}).forEach(([id, t]) => { if (badges[id] === undefined) badges[id] = t; });
     store.set("badges", badges);
     const s = store.get("stats", {}), s2 = d.stats || {};
-    ["maxCombo", "luckyFive", "luckyOne"].forEach(k => s[k] = Math.max(s[k] || 0, s2[k] || 0));
+    ["maxCombo", "luckyFive", "luckyOne", "anagramHard", "anagramMaxLen", "anagramMatchNormal", "anagramMatchHard"].forEach(k => s[k] = Math.max(s[k] || 0, s2[k] || 0));
     ["ccMe", "luckyItems"].forEach(k => s[k] = [...new Set([...(s[k] || []), ...(s2[k] || [])])]);
     s.ccHands = s.ccHands || {};
     Object.entries(s2.ccHands || {}).forEach(([h, n]) => s.ccHands[h] = (s.ccHands[h] || 0) + n);
@@ -1795,6 +1922,9 @@ $("importFile").onchange = async e => {
   renderLevels(false);
   checkBadges(false);
   renderBadges();
+  renderWordPick();
+  $("anagramText").value = store.get("anagramText", "");
+  document.querySelectorAll('input[name="anagramLevel"]').forEach(r => r.checked = r.value === getAnagramLevel());
   toast(importMode === "overwrite" ? "バックアップから戻しました ✓" : "合算しました ✓", true);
 };
 
@@ -1878,7 +2008,7 @@ function levelUp(btn, e, lv) {
 // ---- バッジ ----
 // 送った記録（ログ・日ごとの記録・特別な出来事）から、もらえるバッジを判定する
 
-const BADGE_CATS = ["回数", "合計", "いろいろ送る", "続ける", "連打", "時間", "チンチロ", "占い", "コンプリート", "隠しバッジ"];
+const BADGE_CATS = ["回数", "合計", "いろいろ送る", "続ける", "連打", "時間", "チンチロ", "占い", "アナグラム", "コンプリート", "隠しバッジ"];
 const CC_HANDS = ["pinzoro", "zoro", "shigoro", "me", "menashi", "hifumi"];
 const TIER = ["🥉", "🥈", "🥇"];
 const EMOJI_BADGE_NAMES = {
@@ -1914,6 +2044,7 @@ const BADGES = [
   { id: "r1", cat: "いろいろ送る", e: "💬", name: "ひとことデビュー", desc: "ランダムワードを1回送る", goal: 1, val: c => c.t["💬"] || 0 },
   { id: "r50", cat: "いろいろ送る", e: "💬", name: "おしゃべり", desc: "ランダムワードを50回送る", goal: 50, val: c => c.t["💬"] || 0 },
   { id: "r200", cat: "いろいろ送る", e: "💬", name: "言葉の魔術師", desc: "ランダムワードを200回送る", goal: 200, val: c => c.t["💬"] || 0 },
+  { id: "call1", cat: "いろいろ送る", e: "🚨", name: "はじめての呼び出し", desc: "呼び出しを1回送る", goal: 1, val: c => c.t["🚨"] || 0 },
   // 続ける
   ...[[3, "📅", "三日坊主卒業"], [7, "🗓", "一週間皆勤"], [14, "🌟", "二週間つづいた"], [30, "🏆", "皆勤賞"],
     [100, "💎", "百日つづいた"], [365, "🌈", "一年ずっと"]].map(([goal, e, name]) => ({
@@ -1947,6 +2078,28 @@ const BADGES = [
   { id: "luck5", cat: "占い", e: "⭐", name: "最高の一日", desc: "占いで★5つを引く", goal: 1, val: c => c.s.luckyFive || 0 },
   { id: "luck5x5", cat: "占い", e: "🍀", name: "強運の持ち主", desc: "占いで★5つを5回引く", goal: 5, val: c => c.s.luckyFive || 0 },
   { id: "luckItems", cat: "占い", e: "🎁", name: "アイテム図鑑", desc: `ラッキーアイテムを全${LUCKY_ITEMS.length}種類出す`, goal: LUCKY_ITEMS.length, val: c => (c.s.luckyItems || []).length },
+  // アナグラム
+  { id: "an1", cat: "アナグラム", e: "🔀", name: "アナグラムデビュー", desc: "アナグラムを1回送る", goal: 1, val: c => c.t["🔀"] || 0 },
+  { id: "an50", cat: "アナグラム", e: "🔀", name: "並べかえ名人", desc: "アナグラムを50回送る", goal: 50, val: c => c.t["🔀"] || 0 },
+  { id: "an300", cat: "アナグラム", e: "🧩", name: "言葉の錬金術師", desc: "アナグラムを300回送る", goal: 300, val: c => c.t["🔀"] || 0 },
+  { id: "anHard1", cat: "アナグラム", e: "🌪", name: "むずかしいに挑戦", desc: "アナグラム「むずかしい」で1回送る", goal: 1, val: c => c.s.anagramHard || 0 },
+  { id: "anHard50", cat: "アナグラム", e: "🧠", name: "むずかしい職人", desc: "アナグラム「むずかしい」で50回送る", goal: 50, val: c => c.s.anagramHard || 0 },
+  { id: "anLong", cat: "アナグラム", e: "📜", name: "長文チャレンジ", desc: "10文字以上の言葉でアナグラムを送る", goal: 10, val: c => c.s.anagramMaxLen || 0 },
+  // 元どおりに揃った回数（3文字以上の言葉）。難しさごと
+  ...[[1, "🎉", "奇跡の一致"], [5, "🍀", "揃えの達人"], [20, "🔮", "並びを見通す者"]].map(([goal, e, name]) => ({
+    id: `anMatch${goal}`, cat: "アナグラム", e, name, desc: `アナグラム「ふつう」で元どおりに${goal}回揃う（難易度C以上）`,
+    goal, val: c => c.s.anagramMatchNormal || 0,
+  })),
+  ...[[1, "🌟", "超奇跡"], [3, "💫", "奇跡を呼ぶ人"], [10, "👼", "アナグラムの神"]].map(([goal, e, name]) => ({
+    id: `anHardMatch${goal}`, cat: "アナグラム", e, name, desc: `アナグラム「むずかしい」で元どおりに${goal}回揃う（難易度C以上）`,
+    goal, val: c => c.s.anagramMatchHard || 0,
+  })),
+  // 揃えた言葉の難易度ランク（ふつう・むずかしいどちらでもOK）。SS と SSS は隠しバッジ
+  ...[["🟢", "C"], ["🔵", "B"], ["🟣", "A"], ["🌟", "S"], ["💎", "SS"], ["🌈", "SSS"]].map(([e, r], i) => ({
+    id: `anRank${r}`, cat: i >= 4 ? "隠しバッジ" : "アナグラム", e, name: `難易度${r} 達成`, hidden: i >= 4,
+    desc: `アナグラムで難易度${r}（${ANAGRAM_RANKS[i].min.toLocaleString()}回に1回以上むずかしい）の言葉を元どおりに揃える`,
+    flag: true,
+  })),
   // コンプリート
   { id: "allEmoji", cat: "コンプリート", e: "🌈", name: "ぜんぶ送った", desc: "6つの絵文字を全部1回以上送る", goal: 6, val: c => QUICK.filter(q => c.t[q.emoji]).length },
   { id: "allFeat", cat: "コンプリート", e: "🧰", name: "なんでも屋", desc: "天気・占い・チンチロ・ランダムを全部1回以上送る", goal: 4, val: c => FEATURES.filter(e => c.t[e]).length },
@@ -1977,7 +2130,7 @@ const BADGES = [
   { id: "hUnlucky", cat: "隠しバッジ", e: "😇", name: "逆にレア", desc: "占いで★1つを3回引く", goal: 3, val: c => c.s.luckyOne || 0, hidden: true },
   { id: "hBirdCombo", cat: "隠しバッジ", e: "🪺", name: "巣立ち", desc: "🐦 を1回の連打で100回送る", flag: true, hidden: true },
   { id: "hBadge30", cat: "隠しバッジ", e: "🏅", name: "バッジコレクター", desc: "バッジを30個集める", goal: 30, val: c => c.badgeCount, hidden: true },
-  { id: "hAnagram", cat: "隠しバッジ", e: "🎉", name: "奇跡の一致", desc: "アナグラムで元の言葉のまま揃う（3文字以上）", flag: true, hidden: true },
+  { id: "hAllSame", cat: "隠しバッジ", e: "🪞", name: "ぜんぶ同じ", desc: "アナグラム「むずかしい」で全部同じ文字になる（3文字以上）", flag: true, hidden: true },
 ];
 
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -2085,7 +2238,18 @@ function onSent(kind, info = {}) {
       s.ccLast = h.type;
     });
   }
-  if (kind === "anagram" && info.match) flags.hAnagram = true;
+  if (kind === "anagram") {
+    // 揃った回数は、揃った相手の人数ぶん数える
+    if (info.matches) {
+      const k = info.hard ? "anagramMatchHard" : "anagramMatchNormal";
+      s[k] = (s[k] || 0) + info.matches;
+      // 揃えたランクと、それより下のランクのバッジを全部もらう（S を揃えたら C・B・A も）
+      ANAGRAM_RANKS.forEach((x, i) => { if (i <= info.matchRank) flags[`anRank${x.r}`] = true; });
+    }
+    if (info.allSame && info.hard) flags.hAllSame = true;
+    if (info.hard) s.anagramHard = (s.anagramHard || 0) + info.recipients;
+    s.anagramMaxLen = Math.max(s.anagramMaxLen || 0, info.len || 0);
+  }
   if (kind === "lucky") {
     s.luckyItems = s.luckyItems || [];
     (info.results || []).forEach(r => {
