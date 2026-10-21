@@ -317,8 +317,8 @@
   <div class="header">
     <h1>🔔 呼び出し君</h1>
     <div class="header-btns">
-      <button class="help-btn coin-btn" data-page="pageGacha" id="coinBtn" aria-label="ガチャ">🪙 <span id="coinCount">0</span></button>
       <button class="help-btn reload-btn" id="reloadBtn" aria-label="最新の状態に更新">🔄</button>
+      <button class="help-btn coin-btn" data-page="pageGacha" id="coinBtn" aria-label="ガチャ">🪙 <span id="coinCount">0</span></button>
       <button class="help-btn" data-page="pageHelp">📖<span class="help-label"> 使い方</span></button>
     </div>
   </div>
@@ -2699,10 +2699,12 @@ function showNextBadge() {
   if (modalOpen || !badgeQueue.length) return;
   const b = badgeQueue.shift();
   confetti();
-  openModal("🏅 バッジ獲得！", b.e, `${b.tier ? b.tier + " " : ""}${b.name}`, b.desc, () => showNextBadge());
+  // バッジ獲得は見逃さないよう、OK を押すまで閉じない
+  openModal("🏅 バッジ獲得！", b.e, `${b.tier ? b.tier + " " : ""}${b.name}`, b.desc, () => showNextBadge(), { okOnly: true });
 }
 
-function openModal(kicker, e, name, desc, onClose) {
+// okOnly: true なら、外側を押しても閉じない（OK ボタンだけで閉じる）
+function openModal(kicker, e, name, desc, onClose, { okOnly = false } = {}) {
   modalOpen = true;
   const wrap = document.createElement("div");
   wrap.className = "modal";
@@ -2710,7 +2712,7 @@ function openModal(kicker, e, name, desc, onClose) {
     <div class="mn">${esc(name)}</div><div class="md">${desc}</div><button class="send" style="margin-top:0">OK</button></div>`;
   const close = () => { wrap.remove(); modalOpen = false; onClose && onClose(); };
   wrap.querySelector("button").onclick = close;
-  wrap.onclick = ev => { if (ev.target === wrap) close(); };
+  wrap.onclick = ev => { if (ev.target === wrap && !okOnly) close(); };
   document.body.appendChild(wrap);
 }
 
