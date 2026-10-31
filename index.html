@@ -70,6 +70,18 @@
           background: linear-gradient(90deg, #ff5a36, #ffb627); padding: 6px 14px; border-radius: 999px;
           box-shadow: 0 6px 18px rgba(0,0,0,.25); white-space: nowrap; }
 
+  /* アナグラムの記録 */
+  .ar { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .ar:last-child { border-bottom: none; }
+  .ar-word { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: var(--sub); }
+  .ar-word b { font-size: 16px; color: var(--text); overflow-wrap: anywhere; }
+  .ar-word span { flex: none; }
+  .ar-mode { margin-top: 6px; font-size: 13px; }
+  .ar-line { display: flex; justify-content: space-between; gap: 10px; }
+  .ar-line span:last-child { flex: none; font-variant-numeric: tabular-nums; }
+  .ar-line small { color: var(--sub); margin-left: 6px; }
+  .ar-sub { color: var(--sub); font-size: 12px; line-height: 1.6; margin-top: 2px; }
+
   /* バッジ */
   .bsum { display: flex; align-items: baseline; gap: 8px; }
   .bsum b { font-size: 30px; font-variant-numeric: tabular-nums; }
@@ -494,6 +506,7 @@
             <li><b>合計</b>と、<b>絵文字ごとの回数</b></li>
             <li><b>月ごとのグラフ</b>（‹ › で年を切りかえ、棒を押すと内訳）</li>
             <li><b>年月ごとの一覧</b>（年月を押すとグラフにジャンプ）</li>
+            <li><b>アナグラムの記録</b>（言葉ごと・難しさごとの送信回数、成功回数、何回目で成功したか）</li>
             <li><b>送った履歴</b>（いつ・誰に・何を送ったか。連打は「×5」のようにまとまります）</li>
           </ul>
           <p>友達から<b>もらった</b>通知の履歴は、Bark アプリの中で見られます。</p>
@@ -694,6 +707,12 @@
         <tbody id="logTable"></tbody>
       </table>
       <p class="hint">年月を押すと、その月のグラフを表示します。</p>
+    </div>
+    <div class="card">
+      <h2>🔀 アナグラムの記録</h2>
+      <div id="anagramList"></div>
+      <button class="sub-btn" id="anagramMore" style="width:100%;margin-top:10px" hidden>もっと見る</button>
+      <p class="hint">言葉ごとに、難易度別の回数を最後に送った順で表示します。2人に送ると2回と数えます。</p>
     </div>
     <div class="card">
       <h2>🏅 バッジ</h2>
@@ -1351,6 +1370,49 @@ function shuffleChars(chars) {
 // むずかしい：1文字ずつ、元の言葉の文字からランダムに選ぶ（同じ文字が何回も出たり、出ない文字があったりする）
 const scrambleHard = chars => chars.map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
 
+// ---- 言葉ごとの記録 ----
+// 言葉 → 難しさごとに { sent: 送信回数, hits: 成功までにかかった回数の一覧, since: 前回の成功からの回数 }
+// 2人以上に送ったときは1人ごとに並びがちがうので、人数分の回数として数える
+function recordAnagram(word, hard, results) {
+  if (!results.length) return;
+  const all = store.get("anagramRecords", {});
+  const rec = all[word] = all[word] || {};
+  const m = rec[hard ? "hard" : "normal"] = rec[hard ? "hard" : "normal"] || { sent: 0, hits: [], since: 0 };
+  results.forEach(hit => {
+    m.sent++;
+    m.since++;
+    if (hit) { m.hits.push(m.since); m.since = 0; }
+  });
+  rec.last = Date.now();
+  store.set("anagramRecords", all);
+}
+
+// ログ画面の「アナグラムの記録」。最後に送った順に10件ずつ表示
+let anagramShown = 10;
+function renderAnagramRecords() {
+  const all = store.get("anagramRecords", {});
+  const words = Object.keys(all).sort((a, b) => all[b].last - all[a].last);
+  const modeLine = (word, key, label) => {
+    const m = all[word][key];
+    if (!m) return "";
+    const hard = key === "hard";
+    const idx = anagramRank(anagramOdds(splitChars(word), hard));
+    const rank = idx < 0 ? "ランク外" : `難易度${ANAGRAM_RANKS[idx].r}`;
+    const result = m.hits.length ? `${m.hits.length}回成功` : "成功なし";
+    const detail = m.hits.length
+      ? `<div class="ar-sub">成功までの回数：${m.hits.map(n => `${n.toLocaleString()}回`).join("、")}<br>前回の成功から ${m.since.toLocaleString()}回</div>`
+      : "";
+    return `<div class="ar-mode"><div class="ar-line"><span>${label}<small>${rank}</small></span><span>${m.sent.toLocaleString()}回送信 / ${result}</span></div>${detail}</div>`;
+  };
+  $("anagramList").innerHTML = words.length ? words.slice(0, anagramShown).map(w => {
+    const total = (all[w].normal?.sent || 0) + (all[w].hard?.sent || 0);
+    return `<div class="ar"><div class="ar-word"><b>${esc(w)}</b><span>送信 ${total.toLocaleString()}回</span></div>
+      ${modeLine(w, "normal", "ふつう")}${modeLine(w, "hard", "むずかしい")}</div>`;
+  }).join("") : `<p class="hint">まだ記録がありません</p>`;
+  $("anagramMore").hidden = words.length <= anagramShown;
+}
+$("anagramMore").onclick = () => { anagramShown += 10; renderAnagramRecords(); };
+
 // ---- 揃いやすさ → 難易度ランク ----
 // 「何回に1回、元どおりに揃うか」を計算する
 //   ふつう：並べ方の種類の数（同じ文字どうしの入れかえは見た目が同じなので数えない）= n! ÷ (同じ文字の数)! の積
@@ -1421,17 +1483,31 @@ $("anagramSend").onclick = async () => {
   const mark = hard ? "（むずかしい）" : "";
   const rankIdx = anagramRank(anagramOdds(chars, hard));
   const rankText = rankIdx < 0 ? "" : ` 難易度${ANAGRAM_RANKS[rankIdx].r}`;
+  // 通知に「何回目の挑戦か」を付ける。記録と同じく前回の成功から数え、2人以上なら1人ずつ進める
+  const past = store.get("anagramRecords", {})[text]?.[hard ? "hard" : "normal"];
+  let since = past?.since || 0, clears = past?.hits.length || 0, total = past?.sent || 0;
   const r = await sendAll(list, f => {
     const s = shuffled.get(f.key);
-    return isMatch(s)
-      ? { title: `🎉 アナグラム大成功！${rankText}`, body: `🎊 ${s} 🎊`, opts: { logAs: ANAGRAM_LOG } }
-      : { title: `🔀 アナグラム${mark}`, body: s, opts: { logAs: ANAGRAM_LOG } };
+    const hit = isMatch(s);
+    since++;
+    total++;
+    if (hit) clears++;
+    const count = `${since.toLocaleString()}回目 | クリア${clears.toLocaleString()}回 | 総${total.toLocaleString()}回`;
+    if (hit) since = 0;
+    return hit
+      ? { title: `🎉 アナグラム大成功！${rankText}`, body: `🎊 ${s} 🎊\n${count}`, opts: { logAs: ANAGRAM_LOG } }
+      : { title: `🔀 アナグラム${mark}`, body: `${s}\n${count}`, opts: { logAs: ANAGRAM_LOG } };
   });
   showSent(r.items);
   const hits = r.ok.filter(f => isMatch(shuffled.get(f.key)));
+  recordAnagram(text, hard, r.ok.map(f => isMatch(shuffled.get(f.key))));
   if (hits.length) {
     confetti();
     for (let i = 0; i < 3; i++) setTimeout(() => burst($("anagramSend"), "🎉"), i * 150);
+    // 成功のポップアップ。OK を押すまで閉じない。同時にもらったバッジは、閉じたあとに続けて出す
+    const odds = anagramOdds(chars, hard);
+    const level = `${hard ? "むずかしい" : "ふつう"}${rankText}（${oddsText(odds)}）`;
+    openModal("🎉 アナグラム大成功！", "🎉", text, `${esc(level)}<br>→ ${esc(names(hits))}`, () => showNextBadge(), { okOnly: true });
   }
   if (r.ok.length) onSent("anagram", {
     recipients: r.ok.length, hard, len: chars.length,
@@ -1855,10 +1931,11 @@ $("yNext").onclick = () => { viewYear++; renderLog(); };
 // ログのリセット。回数から計算するバッジ・レベルや、チンチロなどの記録もまとめて最初からにする
 // （友達・天気・ランダムワードの設定は残す）
 $("logReset").onclick = () => {
-  if (!confirm("ログを全部消しますか？\n送った回数・送った履歴・バッジ・ボタンのレベルが全部最初からになります。（元に戻せません）")) return;
+  if (!confirm("ログを全部消しますか？\n送った回数・送った履歴・アナグラムの記録・バッジ・ボタンのレベルが全部最初からになります。（元に戻せません）")) return;
   store.set("log", {});
   store.set("daily", {});
   store.set("history", []);
+  store.set("anagramRecords", {});
   store.set("stats", {});
   store.set("badges", {});
   store.set("levels", {});
@@ -1902,6 +1979,8 @@ function renderLog() {
   renderChart(log);
   historyShown = 30;
   renderHistory();
+  anagramShown = 10;
+  renderAnagramRecords();
   renderBadges();
   renderBackupInfo();
 }
@@ -1965,7 +2044,7 @@ function renderChart(log) {
 // ---- バックアップ ----
 // ghToken（GitHub のトークン）は安全のためバックアップに入れない
 const BACKUP_KEYS = ["log", "friends", "targets", "server", "weather", "ghRepo", "words", "history",
-  "daily", "stats", "badges", "levels", "anagramText", "anagramLevel", "wordPick", "coins", "gacha"];
+  "daily", "stats", "badges", "levels", "anagramText", "anagramLevel", "wordPick", "coins", "gacha", "anagramRecords"];
 const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -2041,6 +2120,20 @@ $("importFile").onchange = async e => {
       Object.entries(o).forEach(([em, n]) => daily[k][em] = (daily[k][em] || 0) + n);
     });
     store.set("daily", daily);
+    // アナグラムの記録は回数を足す
+    const records = store.get("anagramRecords", {});
+    Object.entries(d.anagramRecords || {}).forEach(([w, x]) => {
+      const rec = records[w] = records[w] || {};
+      ["normal", "hard"].forEach(k => {
+        if (!x[k]) return;
+        const m = rec[k] = rec[k] || { sent: 0, hits: [], since: 0 };
+        m.sent += x[k].sent;
+        m.hits.push(...x[k].hits);
+        m.since += x[k].since;
+      });
+      rec.last = Math.max(rec.last || 0, x.last || 0);
+    });
+    store.set("anagramRecords", records);
     const badges = store.get("badges", {});
     Object.entries(d.badges || {}).forEach(([id, t]) => { if (badges[id] === undefined) badges[id] = t; });
     store.set("badges", badges);
