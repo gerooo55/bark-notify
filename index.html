@@ -709,18 +709,18 @@
       <p class="hint">年月を押すと、その月のグラフを表示します。</p>
     </div>
     <div class="card">
-      <h2>🔀 アナグラムの記録</h2>
-      <div id="anagramList"></div>
-      <button class="sub-btn" id="anagramMore" style="width:100%;margin-top:10px" hidden>もっと見る</button>
-      <p class="hint">言葉ごとに、難易度別の回数を最後に送った順で表示します。2人に送ると2回と数えます。</p>
-    </div>
-    <div class="card">
       <h2>🏅 バッジ</h2>
       <div class="bsum"><b id="badgeCount">0</b><span class="hint" id="badgeOf"></span></div>
       <div class="bbar"><i id="badgeBar" style="width:0"></i></div>
       <p class="hint" style="margin:4px 0 8px">バッジを押すと、もらえる条件が見られます。❓ は隠しバッジ（条件はひみつ）。<br>
         バッジをもらうと、選んでいる送る相手にも「🏅 バッジ獲得！」が届きます。</p>
       <div id="badgeList"></div>
+    </div>
+    <div class="card">
+      <h2>🔀 アナグラムの記録</h2>
+      <div id="anagramList"></div>
+      <button class="sub-btn" id="anagramMore" style="width:100%;margin-top:10px" hidden>もっと見る</button>
+      <p class="hint">言葉ごとに、難易度別の回数を最後に送った順で表示します。2人に送ると2回と数えます。</p>
     </div>
     <div class="card">
       <h2>📨 送った履歴</h2>
@@ -1387,8 +1387,9 @@ function recordAnagram(word, hard, results) {
   store.set("anagramRecords", all);
 }
 
-// ログ画面の「アナグラムの記録」。最後に送った順に10件ずつ表示
-let anagramShown = 10;
+// ログ画面の「アナグラムの記録」。最後に送った順に、最初は2件だけ表示
+const ANAGRAM_FIRST = 2;
+let anagramShown = ANAGRAM_FIRST;
 function renderAnagramRecords() {
   const all = store.get("anagramRecords", {});
   const words = Object.keys(all).sort((a, b) => all[b].last - all[a].last);
@@ -1979,7 +1980,7 @@ function renderLog() {
   renderChart(log);
   historyShown = 30;
   renderHistory();
-  anagramShown = 10;
+  anagramShown = ANAGRAM_FIRST;
   renderAnagramRecords();
   renderBadges();
   renderBackupInfo();
